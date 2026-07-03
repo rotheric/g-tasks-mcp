@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.log
+*~
+
+# Local agent / dev-harness files (not part of the product)
+.clauded.yaml
+CLAUDE.md
+.claude/

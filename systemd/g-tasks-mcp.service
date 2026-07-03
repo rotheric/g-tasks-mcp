@@ -1,0 +1,18 @@
+[Unit]
+Description=Google Tasks MCP server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Absolute path to this checkout. Reads .env from here (via dotenv) and writes
+# tokens to DATA_DIR (default ~/.g-tasks-mcp). Replace with your checkout path.
+WorkingDirectory=/absolute/path/to/g-tasks-mcp
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=5
+# stdout/stderr are captured by journald; view with `journalctl --user -u g-tasks-mcp`.
+SyslogIdentifier=g-tasks-mcp
+
+[Install]
+WantedBy=default.target

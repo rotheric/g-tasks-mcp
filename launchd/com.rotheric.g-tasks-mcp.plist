@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.rotheric.g-tasks-mcp</string>
+
+  <!-- node dist/index.js. Set the FIRST path to the output of `which node`:
+       Apple Silicon Homebrew: /opt/homebrew/bin/node
+       Intel Homebrew:         /usr/local/bin/node
+       nvm:                    ~/.nvm/versions/node/<version>/bin/node
+       Volta:                  ~/.volta/bin/node
+       Replace the placeholder below. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/absolute/path/to/node</string>
+    <string>dist/index.js</string>
+  </array>
+
+  <!-- Absolute path to this checkout. .env is read from here (via dotenv);
+       tokens are written to DATA_DIR (default ~/.g-tasks-mcp). -->
+  <key>WorkingDirectory</key>
+  <string>/absolute/path/to/g-tasks-mcp</string>
+
+  <!-- Start at login and keep running; relaunch only if it exits with failure. -->
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <!-- launchd has no journald equivalent; persist stdout/stderr to log files.
+       launchd needs absolute paths here (no ~ expansion); replace YOUR_USERNAME.
+       Rotate these with `newsyslog` if they grow (see README). -->
+  <key>StandardOutPath</key>
+  <string>/Users/YOUR_USERNAME/Library/Logs/g-tasks-mcp.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/YOUR_USERNAME/Library/Logs/g-tasks-mcp.error.log</string>
+</dict>
+</plist>

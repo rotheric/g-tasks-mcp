@@ -1,0 +1,35 @@
+{
+  "name": "g-tasks-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Google Tasks with OAuth2 (MCP Authorization spec, Google as upstream IdP)",
+  "type": "module",
+  "license": "MIT",
+  "author": "Markus Rother <markus@rotheric.com>",
+  "main": "dist/index.js",
+  "bin": {
+    "g-tasks-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
