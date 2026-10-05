@@ -1,0 +1,393 @@
+{
+  "story_id": "S1",
+  "status": "in_progress",
+  "remediation_rounds": 5,
+  "retrospective": {
+    "skipped": true,
+    "reason": "in progress"
+  },
+  "modules_touched": [
+    "auth"
+  ],
+  "verification_rounds": [
+    {
+      "round": 1,
+      "questions": [
+        {
+          "question_id": "VQ-S1-001",
+          "question": "Does executable evidence establish: Unknown clients cannot obtain codes or tokens from stored Google credentials; owner identity and explicit client consent are mandatory.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/smoke.test.ts:318,379,396,622",
+            "Private probes: changed callback consent/denial, negative provisioning, all production tools/list registrations",
+            "src/auth/browser.ts authorize/approve/complete; src/storage.ts approved/issueGrant"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-002",
+          "question": "Does executable evidence establish: Browser callbacks enforce session-bound single-use state, nonce, expiry, owner and transition checks; logout/revocation interleavings never restore access.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/smoke.test.ts:581,751,929,1033,1084; test/identity.test.ts:12",
+            "Private probes: two simultaneous identity callbacks and valid unconsumed runtime state with absent/mismatched cookies",
+            "src/auth/browser.ts session/valid/callback/logout"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-003",
+          "question": "Does executable evidence establish: OAuth enforces PKCE, redirect/client/resource binding, tasks scope, refresh rotation and grant revocation with no cross-client mutation.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/smoke.test.ts:428,485,690; test/storage.test.ts:153,217",
+            "Private probes: confidential revoke, parallel refresh replay family invalidation, exact family expiry/one-second access TTL, expired secrets",
+            "src/provider.ts exchangeAuthorizationCode/exchangeRefreshToken; src/storage.ts rotate/revokeToken"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-004",
+          "question": "Does executable evidence establish: Versioned private atomic storage fails closed, locks out concurrent processes, migrates disconnected and rejects legacy MCP sessions.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/storage.test.ts:53,74,124,290,318,382; test/setup.test.ts:13,234",
+            "src/storage.ts acquire/load/update/migrate; synchronous locked state replacement and no legacy fallback"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-005",
+          "question": "Does executable evidence establish: Trusted stop-first owner setup and CLI administration work without network ownership enrollment; hosted and local configuration validate securely.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/setup.test.ts:13,86,114; test/smoke.test.ts:657",
+            "src/index.ts; src/setup.ts; src/auth/setup-browser.ts; src/config.ts",
+            "README.md and HOST-TESTING.md stop-first setup/forwarding/migration instructions"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-025",
+          "question": "Are failures redacted and changes limited to the reviewed authentication scope?",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/setup.test.ts:234; src/tools.ts run; src/auth/browser.ts guarded callback errors",
+            "git status --short; git diff --stat; git diff -- src/tools.ts package.json; reviewed README.md, HOST-TESTING.md, .env.example and dependency changes"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-026",
+          "question": "Does one auth module own each invariant with typed transitions and no duplicated policy?",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "specs/epic-owner-auth/ownership-ledger.json; src/storage.ts typed State/Revision and serialized transitions",
+            "src/auth/policy.ts; src/auth/browser.ts; src/provider.ts; src/google.ts; src/app.ts; npm run typecheck"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-027",
+          "question": "Do real HTTP and stateful interleavings distinguish owner approval from stored credentials?",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/smoke.test.ts:318,379,751,846,929; private two-identity and real OAuth refresh producer matrices",
+            "Real HTTP SDK handlers, real Storage/reload, real Tasks tools/Google OAuth2Client with only external transport synthetic"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-028",
+          "question": "Are wrong-owner, replay, resource, scope and cross-client boundaries enforced by production code?",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/identity.test.ts:12; test/smoke.test.ts:396,428; test/storage.test.ts:153,178",
+            "Private wrong-owner provisioning and missing-cookie valid-state probes; src/auth/policy.ts and production provider/browser/store paths"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-029",
+          "question": "Are atomic persistence, lifecycle limits and deployment defaults explicit and tested?",
+          "verdict": "PARTIAL",
+          "confidence": 1.0,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/storage.test.ts:53,74,217,318,400; test/setup.test.ts:86; test/smoke.test.ts:657,1033,1084",
+            "Private exact family expiry/TTL cap and confidential secret expiry probes; README.md documented lifecycle/deployment limits"
+          ],
+          "gaps": [
+            "EX-1: confidential client secret accepted at exact expiry; private /token probe returned 200 instead of 400. Past-expiry rejection passes."
+          ],
+          "severity": 2,
+          "root_cause_category": "boundary_condition_sdk_contract"
+        },
+        {
+          "question_id": "VQ-S1-090",
+          "question": "Does evidence cover every frozen checklist and generated applicable ordering in acceptance-criteria.md, with real production composition and no live path inferred from mocked tests?",
+          "verdict": "PARTIAL",
+          "confidence": 1.0,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/identity.test.ts; test/storage.test.ts; test/setup.test.ts; test/smoke.test.ts generated callback/Tasks matrices",
+            "Private probes close two-identity concurrency, changed tuple, deny, all tools, confidential revoke, negative provisioning, real refresh producer, refresh concurrency, family expiry and valid-state browser binding gaps",
+            "AUTH-REFACTOR-PLAN.md; acceptance-criteria.md frozen checklist; manual MV-1/MV-2 remain pending"
+          ],
+          "gaps": [
+            "EX-1: confidential client secret accepted at exact expiry; private /token probe returned 200 instead of 400. Past-expiry rejection passes."
+          ],
+          "severity": 2,
+          "root_cause_category": "boundary_condition_sdk_contract"
+        }
+      ],
+      "review": {
+        "model": "gpt-6-astra",
+        "status": "changes_required",
+        "evidence": "evidence/examiner-round-1.json",
+        "finding": "EX-1 exact client-secret expiry; bounded round-5 fix applied, independent recheck pending"
+      }
+    },
+    {
+      "round": 2,
+      "questions": [
+        {
+          "question_id": "VQ-S1-001",
+          "question": "Does executable evidence establish: Unknown clients cannot obtain codes or tokens from stored Google credentials; owner identity and explicit client consent are mandatory.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/smoke.test.ts:318,379,396,622",
+            "Private probes: changed callback consent/denial, negative provisioning, all production tools/list registrations",
+            "src/auth/browser.ts authorize/approve/complete; src/storage.ts approved/issueGrant"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-002",
+          "question": "Does executable evidence establish: Browser callbacks enforce session-bound single-use state, nonce, expiry, owner and transition checks; logout/revocation interleavings never restore access.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/smoke.test.ts:581,751,929,1033,1084; test/identity.test.ts:12",
+            "Private probes: two simultaneous identity callbacks and valid unconsumed runtime state with absent/mismatched cookies",
+            "src/auth/browser.ts session/valid/callback/logout"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-003",
+          "question": "Does executable evidence establish: OAuth enforces PKCE, redirect/client/resource binding, tasks scope, refresh rotation and grant revocation with no cross-client mutation.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/smoke.test.ts:428,485,690; test/storage.test.ts:153,217",
+            "Private probes: confidential revoke, parallel refresh replay family invalidation, exact family expiry/one-second access TTL, expired secrets",
+            "src/provider.ts exchangeAuthorizationCode/exchangeRefreshToken; src/storage.ts rotate/revokeToken"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-004",
+          "question": "Does executable evidence establish: Versioned private atomic storage fails closed, locks out concurrent processes, migrates disconnected and rejects legacy MCP sessions.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/storage.test.ts:53,74,124,290,318,382; test/setup.test.ts:13,234",
+            "src/storage.ts acquire/load/update/migrate; synchronous locked state replacement and no legacy fallback"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-005",
+          "question": "Does executable evidence establish: Trusted stop-first owner setup and CLI administration work without network ownership enrollment; hosted and local configuration validate securely.",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/setup.test.ts:13,86,114; test/smoke.test.ts:657",
+            "src/index.ts; src/setup.ts; src/auth/setup-browser.ts; src/config.ts",
+            "README.md and HOST-TESTING.md stop-first setup/forwarding/migration instructions"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-025",
+          "question": "Are failures redacted and changes limited to the reviewed authentication scope?",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/setup.test.ts:234; src/tools.ts run; src/auth/browser.ts guarded callback errors",
+            "git status --short; git diff --stat; git diff -- src/tools.ts package.json; reviewed README.md, HOST-TESTING.md, .env.example and dependency changes"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-026",
+          "question": "Does one auth module own each invariant with typed transitions and no duplicated policy?",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "specs/epic-owner-auth/ownership-ledger.json; src/storage.ts typed State/Revision and serialized transitions",
+            "src/auth/policy.ts; src/auth/browser.ts; src/provider.ts; src/google.ts; src/app.ts; npm run typecheck"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-027",
+          "question": "Do real HTTP and stateful interleavings distinguish owner approval from stored credentials?",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/smoke.test.ts:318,379,751,846,929; private two-identity and real OAuth refresh producer matrices",
+            "Real HTTP SDK handlers, real Storage/reload, real Tasks tools/Google OAuth2Client with only external transport synthetic"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-028",
+          "question": "Are wrong-owner, replay, resource, scope and cross-client boundaries enforced by production code?",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/identity.test.ts:12; test/smoke.test.ts:396,428; test/storage.test.ts:153,178",
+            "Private wrong-owner provisioning and missing-cookie valid-state probes; src/auth/policy.ts and production provider/browser/store paths"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-029",
+          "question": "Are atomic persistence, lifecycle limits and deployment defaults explicit and tested?",
+          "verdict": "YES",
+          "confidence": 1.0,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/storage.test.ts:53,74,217,318,400; test/setup.test.ts:86; test/smoke.test.ts:657,1033,1084",
+            "Private exact family expiry/TTL cap and confidential secret expiry probes; README.md documented lifecycle/deployment limits",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test --test-name-pattern='confidential secret|confidential revocation' /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test --test-name-pattern='confidential secrets expire' test/smoke.test.ts",
+            "src/storage.ts:374 shared verifySecret exact expiry check; test/smoke.test.ts:1124 boundary before/at/reload matrix"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none",
+          "previous_verdict": "PARTIAL"
+        },
+        {
+          "question_id": "VQ-S1-090",
+          "question": "Does evidence cover every frozen checklist and generated applicable ordering in acceptance-criteria.md, with real production composition and no live path inferred from mocked tests?",
+          "verdict": "YES",
+          "confidence": 1.0,
+          "evidence": [
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' npm test",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "test/identity.test.ts; test/storage.test.ts; test/setup.test.ts; test/smoke.test.ts generated callback/Tasks matrices",
+            "Private probes close two-identity concurrency, changed tuple, deny, all tools, confidential revoke, negative provisioning, real refresh producer, refresh concurrency, family expiry and valid-state browser binding gaps",
+            "AUTH-REFACTOR-PLAN.md; acceptance-criteria.md frozen checklist; manual MV-1/MV-2 remain pending",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test --test-name-pattern='confidential secret|confidential revocation' /tmp/gtasks-examiner-0xw0r569/probe.ts",
+            "NODE_OPTIONS='--require=/tmp/gtasks-examiner-0xw0r569/no-dotenv.cjs' node --import tsx --test --test-name-pattern='confidential secrets expire' test/smoke.test.ts",
+            "src/storage.ts:374 shared verifySecret exact expiry check; test/smoke.test.ts:1124 boundary before/at/reload matrix"
+          ],
+          "gaps": [],
+          "severity": 0,
+          "root_cause_category": "none",
+          "previous_verdict": "PARTIAL"
+        }
+      ],
+      "review": {
+        "model": "gpt-6-astra",
+        "status": "passed_offline",
+        "evidence": "evidence/examiner.json",
+        "scope": "Round-5 exact-secret-expiry correction and frozen offline verification; later browser/direct-login deltas separately tested and reviewed for commit."
+      }
+    }
+  ],
+  "test_counts": {
+    "baseline": 4,
+    "final": 86
+  },
+  "mocks": []
+}

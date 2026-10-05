@@ -1,0 +1,54 @@
+{
+  "epic_name": "owner-auth",
+  "created_at": "2026-10-05T12:37:59.357850+00:00",
+  "total_stories": 2,
+  "story_order": [
+    "S1",
+    "S2"
+  ],
+  "stories": [
+    {
+      "id": "S1",
+      "name": "auth",
+      "title": "Owner authorization",
+      "description": "Auth persistence, Google identity, browser/OAuth policies and trusted CLI",
+      "acceptance_criteria": [
+        "AC-AUTH-1",
+        "AC-AUTH-2",
+        "AC-AUTH-3",
+        "AC-AUTH-4",
+        "AC-AUTH-5"
+      ],
+      "complexity": "high",
+      "status": "in_progress",
+      "owning_module": "auth"
+    },
+    {
+      "id": "S2",
+      "name": "integration",
+      "title": "HTTP and Tasks integration",
+      "description": "Assembled access boundary, deployment docs and verification",
+      "acceptance_criteria": [
+        "AC-FLOW-1",
+        "AC-FLOW-2"
+      ],
+      "complexity": "high",
+      "status": "in_progress",
+      "is_integration_story": true
+    }
+  ],
+  "cross_cutting_acs": [
+    {
+      "ac_id": "AC-FLOW-1",
+      "spanned_by": [
+        "S1"
+      ]
+    },
+    {
+      "ac_id": "AC-FLOW-2",
+      "spanned_by": [
+        "S1"
+      ]
+    }
+  ]
+}

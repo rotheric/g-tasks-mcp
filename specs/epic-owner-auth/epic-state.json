@@ -1,0 +1,76 @@
+{
+  "epic_name": "owner-auth",
+  "status": "in_progress",
+  "phase": "IN_PROGRESS",
+  "created_at": "2026-10-05T12:37:59.357850+00:00",
+  "updated_at": "2026-10-05T15:21:38.520699+00:00",
+  "pre_existing_dirty_files": [
+    ".mcp.json",
+    "AUTH-REFACTOR-PLAN.md",
+    "AUTH-REFACTOR-REVIEW.md",
+    "auth-spike.txt"
+  ],
+  "completed_stories": [],
+  "escalated_stories": [],
+  "phase_history": [
+    {
+      "phase": "SPEC_VALIDATED",
+      "timestamp": "2026-10-05T12:37:59.357850+00:00",
+      "trigger": "reviewed-plan-accepted"
+    },
+    {
+      "phase": "PLANNING",
+      "timestamp": "2026-10-05T12:42:21.604743+00:00",
+      "trigger": "ACs-authored"
+    },
+    {
+      "phase": "IN_PROGRESS",
+      "timestamp": "2026-10-05T12:42:21.604743+00:00",
+      "trigger": "adversary-pass"
+    }
+  ],
+  "consumer_sha": "edc9a800e6895ec4b57f724936091f0bad436c75",
+  "plugin_sha": "unknown",
+  "models": {
+    "lead": "unknown",
+    "implementer": "unknown",
+    "examiner": "gpt-6-astra"
+  },
+  "ownership_ledger_path": "ownership-ledger.json",
+  "manual_validation": [
+    {
+      "ac_id": "MV-1",
+      "status": "pending",
+      "owner": "user",
+      "blocked_on": "Remaining live wrong-account/Tasks API and failure/refresh observations; owner setup and SDK login/tool discovery passed"
+    },
+    {
+      "ac_id": "MV-2",
+      "status": "pending",
+      "owner": "user",
+      "blocked_on": "Proprietary harness, refresh/revocation/reconnect paths; live SDK callback/code exchange/tool discovery passed"
+    }
+  ],
+  "gate_runs": [
+    {
+      "gate_id": "spec_adversary_review",
+      "outcome": "fired_remediated",
+      "detail": "evidence/spec-adversary.md"
+    },
+    {
+      "gate_id": "mutation",
+      "outcome": "fired_pass",
+      "detail": "15 bounded behavioral mutants killed on reviewed rounds 3/4 snapshots (80/83 tests). Historical coverage; no full framework audit or final-snapshot mutation claim. evidence/mutation.json"
+    },
+    {
+      "gate_id": "e2e",
+      "outcome": "aborted",
+      "detail": "Live host SDK auth/callback/code exchange/MCP tool discovery passed, including revised direct login. Other manual Google/harness paths remain pending. evidence/host-sdk-live-test.md"
+    },
+    {
+      "gate_id": "pre_commit_review",
+      "outcome": "fired_pass",
+      "detail": "Final continuing structural and fresh Astra reviews CLEAN. 86 tests/typecheck/build; independent focused HTTP and Chromium checks pass. User-authorized checkpoint; remaining manual gates stay pending. evidence/structural-review.md; evidence/fresh-final-review.md; evidence/commit-validation.md"
+    }
+  ]
+}

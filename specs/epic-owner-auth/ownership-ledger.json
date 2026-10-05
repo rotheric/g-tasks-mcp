@@ -1,0 +1,30 @@
+{
+  "epic": "owner-auth",
+  "concepts": [
+    {
+      "id": "owner",
+      "name": "Pinned owner and consent",
+      "owning_module": "auth",
+      "type": "invariant"
+    },
+    {
+      "id": "grant",
+      "name": "Resource-bound grant lifecycle",
+      "owning_module": "auth",
+      "type": "invariant"
+    },
+    {
+      "id": "state",
+      "name": "Durable account generation and credential revision",
+      "owning_module": "auth",
+      "type": "invariant"
+    },
+    {
+      "id": "client-auth",
+      "name": "Persisted client method, verifier and expiry relationship",
+      "owning_module": "auth",
+      "type": "invariant"
+    }
+  ],
+  "stories": []
+}

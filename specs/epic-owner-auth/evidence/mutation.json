@@ -1,0 +1,181 @@
+{
+  "method": "Fifteen bounded behavioral mutants across reviewed rounds 3/4; complete suites, not a full mutation framework audit",
+  "results": [
+    {
+      "mutation": "wrong-owner",
+      "file": "src/auth/browser.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 8 - wrong Google owner, replay, missing browser cookie and CSRF cannot authorize or alter account"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "callback-expiry",
+      "file": "src/auth/browser.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 16 - suspended Google callback cannot resurrect after expiry",
+        "not ok 24 - delayed identity success after expiry preserves current state across reload",
+        "not ok 39 - delayed tasks success after expiry preserves current state across reload"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "resource",
+      "file": "src/auth/policy.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 9 - real SDK PKCE/client/callback/resource checks and scope boundaries"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "refresh-replay",
+      "file": "src/storage.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 70 - refresh replay and spent-token revocation invalidate only their grant"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "stale-refresh",
+      "file": "src/storage.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 51 - production Tasks success after refresh cannot overwrite or retire current credentials",
+        "not ok 52 - production Tasks success after reconnect cannot overwrite or retire current credentials",
+        "not ok 53 - production Tasks success after new-authorization cannot overwrite or retire current credentials",
+        "not ok 71 - generation and credential revisions protect reconnect from stale success and terminal failure",
+        "not ok 73 - a committed Google refresh protects newer credentials from older refresh events and terminal failures"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "csrf",
+      "file": "src/auth/browser.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 8 - wrong Google owner, replay, missing browser cookie and CSRF cannot authorize or alter account"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "credential-revision",
+      "file": "src/storage.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 51 - production Tasks success after refresh cannot overwrite or retire current credentials",
+        "not ok 54 - production Tasks invalid_grant after refresh cannot overwrite or retire current credentials",
+        "not ok 73 - a committed Google refresh protects newer credentials from older refresh events and terminal failures"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "hosted-plaintext",
+      "file": "src/app.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 19 - hosted mode requires TLS from an explicitly trusted proxy"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "confidential-corruption",
+      "file": "src/storage.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 74 - confidential-client semantic corruption fails closed on reload"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "persisted-redaction",
+      "file": "src/storage.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 5 - startup and migration parse failures redact persisted secret sentinels"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "hosted-config",
+      "file": "src/config.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 3 - configuration enforces deployment and independent loopback setup callback boundaries"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "retired-capacity",
+      "file": "src/storage.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 78 - retired token grants free capacity for fresh authorization and remain invalid after reload",
+        "not ok 79 - retired client grants free capacity for fresh authorization and remain invalid after reload",
+        "not ok 80 - retired disconnect grants free capacity for fresh authorization and remain invalid after reload"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "zero-proxy-prefix",
+      "file": "src/config.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 3 - configuration enforces deployment and independent loopback setup callback boundaries"
+      ],
+      "snapshot_round": 3,
+      "baseline_tests": 80
+    },
+    {
+      "mutation": "absolute-session-expiry",
+      "file": "src/auth/browser.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 62 - delayed identity callback at absolute session expiry commits no authorization",
+        "not ok 63 - delayed tasks callback at absolute session expiry commits no authorization"
+      ],
+      "snapshot_round": 4,
+      "baseline_tests": 83
+    },
+    {
+      "mutation": "hosted-cookie-deletion",
+      "file": "src/auth/browser.ts",
+      "killed": true,
+      "exit_code": 1,
+      "failing_tests": [
+        "not ok 64 - hosted logout deletes its prefixed cookie with the creation security policy"
+      ],
+      "snapshot_round": 4,
+      "baseline_tests": 83
+    }
+  ]
+}

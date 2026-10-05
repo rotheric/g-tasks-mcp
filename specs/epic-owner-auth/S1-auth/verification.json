@@ -1,0 +1,78 @@
+{
+  "story_id": "S1",
+  "authored_by": "story-planner",
+  "authored_at": "2026-10-05T12:37:59.357850+00:00",
+  "questions": [
+    {
+      "question_id": "VQ-S1-001",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-AUTH-1",
+      "question": "Does executable evidence establish: Unknown clients cannot obtain codes or tokens from stored Google credentials; owner identity and explicit client consent are mandatory."
+    },
+    {
+      "question_id": "VQ-S1-002",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-AUTH-2",
+      "question": "Does executable evidence establish: Browser callbacks enforce session-bound single-use state, nonce, expiry, owner and transition checks; logout/revocation interleavings never restore access."
+    },
+    {
+      "question_id": "VQ-S1-003",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-AUTH-3",
+      "question": "Does executable evidence establish: OAuth enforces PKCE, redirect/client/resource binding, tasks scope, refresh rotation and grant revocation with no cross-client mutation."
+    },
+    {
+      "question_id": "VQ-S1-004",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-AUTH-4",
+      "question": "Does executable evidence establish: Versioned private atomic storage fails closed, locks out concurrent processes, migrates disconnected and rejects legacy MCP sessions."
+    },
+    {
+      "question_id": "VQ-S1-005",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-AUTH-5",
+      "question": "Does executable evidence establish: Trusted stop-first owner setup and CLI administration work without network ownership enrollment; hosted and local configuration validate securely."
+    },
+    {
+      "question_id": "VQ-S1-025",
+      "phase": "pre-impl",
+      "category": "QUALITY",
+      "question": "Are failures redacted and changes limited to the reviewed authentication scope?"
+    },
+    {
+      "question_id": "VQ-S1-026",
+      "phase": "pre-impl",
+      "category": "ARCHITECTURE",
+      "question": "Does one auth module own each invariant with typed transitions and no duplicated policy?"
+    },
+    {
+      "question_id": "VQ-S1-027",
+      "phase": "pre-impl",
+      "category": "TEST",
+      "question": "Do real HTTP and stateful interleavings distinguish owner approval from stored credentials?"
+    },
+    {
+      "question_id": "VQ-S1-028",
+      "phase": "pre-impl",
+      "category": "SECURITY",
+      "question": "Are wrong-owner, replay, resource, scope and cross-client boundaries enforced by production code?"
+    },
+    {
+      "question_id": "VQ-S1-029",
+      "phase": "pre-impl",
+      "category": "BEST_PRACTICES",
+      "question": "Are atomic persistence, lifecycle limits and deployment defaults explicit and tested?"
+    },
+    {
+      "question_id": "VQ-S1-090",
+      "phase": "pre-impl",
+      "category": "TEST",
+      "question": "Does evidence cover every frozen checklist and generated applicable ordering in acceptance-criteria.md, with real production composition and no live path inferred from mocked tests?"
+    }
+  ]
+}

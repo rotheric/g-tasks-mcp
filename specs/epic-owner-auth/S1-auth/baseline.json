@@ -1,0 +1,9 @@
+{
+  "captured_at": "2026-10-05T12:38:57.576931+00:00",
+  "tests": 4,
+  "command": "npm test && npm run typecheck",
+  "result": "4 passed; typecheck passed",
+  "typecheck": "passed before edits",
+  "scope": "original repository",
+  "environment_issue": "Resolved with npm ci --ignore-scripts"
+}

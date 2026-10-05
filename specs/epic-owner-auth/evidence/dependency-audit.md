@@ -1,0 +1,3 @@
+# Dependency audit
+
+Compatible npm audit fix updates removed high-severity findings from the existing lockfile. Residual: uuid <11.1.1 buffer bounds advisory in v3/v5/v6 when a buffer is supplied; four moderate package entries (uuid, gaxios, googleapis-common, googleapis) describe this one dependency chain. Installed gaxios/build/src/gaxios.js:417 and googleapis-common/build/src/apirequest.js:152,190 use v4() without user buffers. No affected v3/v5/v6 operation is exposed by this service. Major Google API upgrade is deferred; this is an applicability assessment, not an audit-clean claim. SDK minimum raised to tested 1.29.0. Re-audit before public deployment.

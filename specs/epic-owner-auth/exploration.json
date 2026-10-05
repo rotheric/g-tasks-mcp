@@ -1,0 +1,7 @@
+{
+  "plan": "spec.md",
+  "sdk": "1.29.0",
+  "baseline_tests": 4,
+  "environment_issue": "Copied macOS esbuild; npm ci restores platform-native dependency",
+  "host_validation": "pending user installation"
+}

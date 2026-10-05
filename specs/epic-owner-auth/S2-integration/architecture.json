@@ -1,0 +1,34 @@
+{
+  "module_name": "integration",
+  "purpose": "Reviewed owner auth implementation",
+  "public_api": [
+    "createApp",
+    "Storage",
+    "GooglePort"
+  ],
+  "private_files": [],
+  "owned_data": [
+    "grants",
+    "owner",
+    "tokens"
+  ],
+  "dependencies_allowed": [
+    "SDK",
+    "googleapis",
+    "node",
+    "express",
+    "zod"
+  ],
+  "dependencies_forbidden": [
+    "external tenancy"
+  ],
+  "external_ports": [
+    "Google OAuth"
+  ],
+  "events_emitted": [],
+  "events_consumed": [],
+  "test_targets": [
+    "HTTP auth",
+    "state lifecycle"
+  ]
+}

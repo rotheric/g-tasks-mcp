@@ -1,0 +1,17 @@
+{
+  "mutation": {
+    "tree": "2b1757d804cb088977900b1e25afff7da0c971d5a8a950d9824f3f45e99fdcf4",
+    "outcome": "fired_pass",
+    "detail": "Historical receipt for early bounded temporary-source security mutations; final mutation history is evidence/mutation.json. This fingerprint does not certify the final commit snapshot."
+  },
+  "e2e": {
+    "tree": "2b1757d804cb088977900b1e25afff7da0c971d5a8a950d9824f3f45e99fdcf4",
+    "outcome": "aborted",
+    "detail": "Historical offline smoke receipt; subsequent host SDK OAuth/tool discovery passed, while other live paths remain pending. Not a final-snapshot release certificate."
+  },
+  "pre_commit_review": {
+    "tree": "07b0cab24075e93aacc5df8a7535931ca0ea96f1",
+    "outcome": "fired_pass",
+    "detail": "Reviewed staged checkpoint snapshot before these permitted gate-state/receipt updates. Continuing structural and fresh Astra final reviews CLEAN. User explicitly authorized scoped commit; other live acceptance gates remain pending."
+  }
+}

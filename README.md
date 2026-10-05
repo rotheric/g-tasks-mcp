@@ -7,17 +7,14 @@ reorganize your to-dos.
 
 Under the hood this is an **MCP server**: it plugs your Google Tasks
 account into Claude Desktop, Claude Code, or any client that speaks
-MCP over HTTP. You sign in through Google in your browser once; after
-that it just works — no copying URLs, no pasting tokens, and
-reconnects are instant.
+MCP over HTTP. You enroll the owner locally, then approve each client through a browser OAuth flow. Tokens refresh automatically.
 
-The MCP server runs locally, and hence does not expose your tasks to
-other agents than the ones you connect with.
+The MCP server binds to loopback by default. Hosted HTTPS operation is configurable; only owner-approved clients receive access.
 
 ## What you can do
 
 | Tool                    | What it does                                                      |
-|-------------------------|-------------------------------------------------------------------|
+| ----------------------- | ----------------------------------------------------------------- |
 | `list_task_lists`       | List all your task lists                                          |
 | `create_task_list`      | Create a new task list                                            |
 | `delete_task_list`      | Delete a task list and everything in it                           |
@@ -35,85 +32,103 @@ You don't have to name a list for everyday requests — task tools default to
 
 ## Getting started
 
-Three one-time steps, then you're set:
-
-1. **Create a Google OAuth client** so the server can talk to your Google account (~5 minutes).
-2. **Run the server** on the same machine as your MCP client.
-3. **Connect your client** and use any tool — your browser opens once for Google consent.
-
-### 1. Create a Google OAuth client (one-time)
-
-You'll need Node.js ≥ 18, a Google account, and a Google Cloud OAuth client:
-
-1. Go to the [Google Cloud console](https://console.cloud.google.com/) and create a project (or reuse one).
-2. Enable the Tasks API: **APIs & Services → Library → Google Tasks API → Enable** (direct link: <https://console.cloud.google.com/apis/library/tasks.googleapis.com>).
-3. Configure the consent screen: **APIs & Services → OAuth consent screen**
-   - Google's setup wizard walks you through **App Information → Audience → Contact Information → Finish**. Fill in the app name and your email under *App Information*, and choose **External** on the *Audience* step (this is the old "User type" setting).
-   - After finishing the wizard, add yourself as a **test user**: **OAuth consent screen → Audience → Test users → Add**.
-4. Create credentials: **APIs & Services → Credentials → Create credentials → OAuth client ID**
-   - Application type: **Web application**
-   - Authorized redirect URI: `http://localhost:3789/oauth/google/callback`
-     (adjust the port if you change `PORT`/`BASE_URL`)
-5. Copy the **Client ID** and **Client secret**.
-
-> **Note on "Testing" publishing status:** while your OAuth consent screen is in *Testing* mode, Google expires refresh tokens after 7 days — you'll be sent through the consent screen again weekly. To avoid that, publish the app (**OAuth consent screen → Audience → Publish app**); for a personal-use app with only the Tasks scope this requires no verification review.
-
-### 2. Run the server
+Use Node.js 18 or newer, a Google account, and a Google Cloud **Web application**
+OAuth client. Enable Google Tasks API, configure the consent screen and test users
+as appropriate, and register `http://localhost:3789/oauth/google/callback` as an
+exact authorized redirect URI. The existing client ID and secret can be reused.
+Identity login adds `openid email`; Tasks provisioning also requests full Tasks
+read/write permission. Existing credentials need fresh verified consent.
 
 ```bash
-cp .env.example .env   # then paste your client ID and secret
-make run               # installs, builds, and starts the server
+cp .env.example .env   # fill in your existing Google client ID and secret
+npm ci
+npm run build
+node dist/index.js setup
+npm start
 ```
 
-The server listens on `http://localhost:3789` by default (MCP endpoint:
-`http://localhost:3789/mcp`).
+Setup opens a temporary loopback listener and prints a URL. Open it in your
+browser, sign in, then confirm the displayed account **in the terminal**. This pins
+Google's stable account subject, not your email address. No network visitor can
+claim ownership. Setup requires the normal service to be stopped.
 
-Other Make targets / npm scripts:
+For an existing installation, stop the managed service before migration and owner
+setup. On macOS, unload it so KeepAlive cannot restart it during these commands:
 
-| Make target    | Equivalent                     | Purpose                                                        |
-|----------------|--------------------------------|----------------------------------------------------------------|
-| `make build`   | `npm install && npm run build` | Compile TypeScript to `dist/`                                  |
-| `make test`    | `npm test`                     | Run the offline test suite (OAuth endpoints, auth gate, tools) |
-| `make run`     | `npm start` (after build)      | Start the server                                               |
-| `make restart` | build + `launchctl kickstart`  | Rebuild and restart the background service (macOS)             |
+```bash
+launchctl bootout gui/$(id -u)/com.rotheric.g-tasks-mcp
+make build
+node dist/index.js migrate
+node dist/index.js setup
+make install
+```
 
-### 3. Connect a client
+On Linux, use `systemctl --user stop g-tasks-mcp.service` before migration/setup
+and restart it afterward. Preserve `.env` and DATA_DIR. Migration quarantines
+legacy Google credentials and invalidates old MCP sessions; fresh verified
+consent is required. Run only one process against a DATA_DIR.
 
-**Claude Code** — either the CLI:
+Build, test, typecheck and development commands automatically repair missing or
+wrong-platform dependencies with `npm ci`. Avoid concurrent host/sandbox installs
+in a shared checkout.
+
+### Connect Claude Code
 
 ```bash
 claude mcp add --transport http google-tasks http://localhost:3789/mcp
 ```
 
-or add it to a project's `.mcp.json` (or the `mcpServers` section of `~/.claude.json` for all projects):
+Use `/mcp` to authenticate when prompted. The browser goes directly to Google
+sign-in for a new session. After verified owner login, it shows the requesting
+client, callback and Tasks permission for explicit approval. Signed-in owners go
+directly to approval. Google Tasks consent follows if the account is not yet connected. The
+harness gets separate MCP tokens; Google credentials stay on the server.
 
-```json
-{
-  "mcpServers": {
-    "google-tasks": {
-      "type": "http",
-      "url": "http://localhost:3789/mcp"
-    }
-  }
-}
-```
+### Connect Claude Desktop locally
 
-**Claude Desktop** — Settings → Connectors → *Add custom connector* with URL `http://localhost:3789/mcp`. On versions without custom connectors, bridge via [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) in `claude_desktop_config.json`:
+Local Desktop integrations launch a process. A stdio-to-HTTP bridge can connect
+that process to this server; the server itself remains HTTP-only. For example:
 
 ```json
 {
   "mcpServers": {
     "google-tasks": {
       "command": "npx",
-      "args": ["mcp-remote", "http://localhost:3789/mcp"]
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://localhost:3789/mcp",
+        "--allow-http",
+        "--host",
+        "127.0.0.1",
+        "--auth-timeout",
+        "600"
+      ]
     }
   }
 }
 ```
 
-Then use any tool (e.g. ask Claude to list your tasks) — your browser opens for the one-time Google consent.
+Choose and record a tested bridge version before deployment. Its OAuth token cache
+is separate from this server's storage. Bridge options are documented in
+[mcp-remote](https://github.com/punkpeye/mcp-remote).
 
-Any other MCP client that supports Streamable HTTP + the MCP authorization spec works the same way.
+### Connect a hosted service
+
+Desktop **custom remote connectors** connect from Anthropic's cloud, including when
+configured in the Desktop app. A localhost URL does not work through that path.
+Use a public HTTPS origin, `DEPLOYMENT_MODE=hosted`, and deliberate bind/proxy
+configuration. Register the exact public `/oauth/google/callback` with Google;
+retain the localhost setup callback for trusted owner enrollment. In Claude's
+connector settings choose **Register automatically**. Published client metadata
+identity is not implemented. See [Claude's network requirements](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
+
+Never advertise an insecure remote HTTP issuer or change the default bind merely
+to make a VM connection work. HTTPS can terminate at a trusted reverse proxy;
+forward the canonical Host and `X-Forwarded-Proto: https`, set explicit trusted
+proxy IPs/subnets in `TRUST_PROXY`, and do not put
+OAuth query strings or credentials into proxy access logs. No hosted deployment
+or real harness path has been certified by the offline tests.
 
 ## Run in the background (autostart)
 
@@ -123,32 +138,25 @@ reachable at `localhost` — for most people that's their desktop, not a remote 
 
 ### macOS (launchd)
 
-A ready-made LaunchAgent is in [`launchd/com.rotheric.g-tasks-mcp.plist`](launchd/com.rotheric.g-tasks-mcp.plist). Before installing, edit two things in it:
-
-- **`ProgramArguments`** → set the first `<string>` to the output of `which node`
-  (Homebrew on Apple Silicon is `/opt/homebrew/bin/node`; nvm users have a
-  version-specific path).
-- **`WorkingDirectory`** → your checkout path (already set if you cloned to the
-  path shown).
-
-Then:
+After migration and owner setup, install from the checkout on your Mac:
 
 ```bash
-make build                                    # ensure dist/ is compiled
-cp launchd/com.rotheric.g-tasks-mcp.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.rotheric.g-tasks-mcp.plist
+make install
 ```
+
+This builds the server and generates a LaunchAgent using the current Node binary,
+checkout directory and home directory for logs. It replaces an existing loaded
+job and starts the updated one. Run `make help` to list available targets.
 
 `RunAtLoad` starts it now and at every login; `KeepAlive` relaunches it if it
 crashes. Manage it:
 
 | Command                                                                            | Purpose                         |
-|------------------------------------------------------------------------------------|---------------------------------|
-| `launchctl list \| grep g-tasks-mcp`                                               | Check it's loaded (0 = running) |
+| ---------------------------------------------------------------------------------- | ------------------------------- |
+| `make status`                                                                    | Show launchd state and last exit status |
 | `make restart` (or `launchctl kickstart -k gui/$(id -u)/com.rotheric.g-tasks-mcp`) | Restart (e.g. after a rebuild)  |
 | `launchctl unload ~/Library/LaunchAgents/com.rotheric.g-tasks-mcp.plist`           | Stop and disable                |
-| `tail -f ~/Library/Logs/g-tasks-mcp.log`                                           | Follow live logs                |
-| `tail -f ~/Library/Logs/g-tasks-mcp.error.log`                                     | Errors only                     |
+| `make logs`                                                                      | Show the last 100 lines of each log and follow both (Ctrl-C to stop) |
 
 launchd has no built-in log rotation. The two log files under `~/Library/Logs/`
 grow slowly (startup + error lines only); rotate with `newsyslog` if needed. After
@@ -172,7 +180,7 @@ sudo loginctl enable-linger "$USER"
 Manage it:
 
 | Command                                   | Purpose                        |
-|-------------------------------------------|--------------------------------|
+| ----------------------------------------- | ------------------------------ |
 | `systemctl --user status g-tasks-mcp`     | Check it's running             |
 | `systemctl --user restart g-tasks-mcp`    | Restart (e.g. after a rebuild) |
 | `journalctl --user -u g-tasks-mcp -f`     | Follow live logs               |
@@ -180,31 +188,80 @@ Manage it:
 
 Logs go to the systemd journal — persisted and rotated automatically, no log files to manage. The service restarts on failure (`Restart=on-failure`). After a `make build`, run `systemctl --user restart g-tasks-mcp` to pick up the new code.
 
-## How sign-in works
+## Authentication and storage
 
-Authentication implements the **MCP Authorization specification** with Google as the upstream identity provider. The sign-in flow is native to your MCP client — no copying URLs, no pasting tokens:
+- The service defaults to `127.0.0.1:3789`, advertised as `http://localhost:3789/mcp`.
+- Owner identity and explicit per-client approval are distinct from stored Google
+  credentials. Previously approved unchanged client permissions can be reused only
+  with a valid owner browser session. Normal token refresh requires no browser.
+- MCP access tokens expire after one hour. Refresh tokens rotate, with a fixed
+  90-day grant expiry and bounded replay history. Reusing a spent refresh token
+  invalidates its grant. A lost refresh response may require reconnecting.
+- Each token is bound to this MCP resource and the `tasks` permission. This remains
+  a single-user server: approved clients act on the pinned owner's Google account.
+- `~/.g-tasks-mcp/state-v2.json` holds private account/auth state atomically. Bearer
+  tokens and confidential-client secrets are hashed; Google credentials remain
+  readable by the server. Directories use `0700`, files `0600`. This is OS file
+  protection, not encrypted storage.
+- One process owns a DATA_DIR. Corrupt state, unknown schemas, unsafe paths and
+  conflicting writers fail closed. Supported storage is a local filesystem.
+- Browser sessions/pending callbacks/codes are transient and restart cancels them;
+  committed grants survive restart. Disconnect invalidates grants permanently,
+  even if the same Google account is subsequently reconnected.
 
-1. You add the server to your MCP client and use any tool.
-2. The client receives a 401, discovers this server's OAuth endpoints, registers itself, and opens your browser.
-3. This server redirects you straight to Google's consent screen. You approve once.
-4. Google redirects back here; the server stores your tokens (locally, `0600` permissions) and hands the client its own access token.
-5. Done. Tokens refresh silently; you won't see the consent screen again unless you revoke access.
+### Administration
 
-## Storage & security
+Stop the service and prevent its manager from automatically respawning it before
+running these commands. They acquire the same writer lock as the server.
 
-- Google tokens, issued MCP tokens, and registered clients are stored under `~/.g-tasks-mcp/` (override with `DATA_DIR`), files created with `0600` permissions.
-- This is a **single-user** server: every connected MCP client operates on the one connected Google account. Don't expose the port beyond localhost.
-- To disconnect the Google account, delete `~/.g-tasks-mcp/google-tokens.json` (and optionally revoke access at <https://myaccount.google.com/permissions>). The next client request triggers a fresh consent flow automatically.
+```bash
+node dist/index.js clients list
+node dist/index.js clients revoke CLIENT_ID
+node dist/index.js clients remove CLIENT_ID
+node dist/index.js disconnect
+```
+
+Revoke invalidates all that client's grants; remove additionally frees registration
+capacity. The online `/revoke` endpoint accepts the client's own access/refresh
+tokens. Merely removing a connector in a harness may not invoke it. Browser logout
+ends browser authentication, not existing MCP grants.
+
+After an unclean process exit, `node dist/index.js lock-recover` removes a lock
+only when its recorded process is absent. It refuses a live or ambiguous owner;
+do not delete a lock belonging to a running service. Unreadable/corrupt state
+requires operator recovery rather than automatic reset. Each normal replacement
+keeps the previous complete state in private `state-v2.backup.json`; startup never
+loads that backup automatically. Stop the service before recovery, inspect and
+restore the backup with mode 0600, then run `node dist/index.js disconnect` before
+starting again. This invalidates any restored grants and requires fresh Google
+and client authorization; restoring an old backup alone could restore revoked
+permissions. Keep the corrupt primary for diagnosis without sharing its secrets.
 
 ## Configuration
 
-| Variable               | Default                  | Purpose                                              |
-|------------------------|--------------------------|------------------------------------------------------|
-| `GOOGLE_CLIENT_ID`     | — (required)             | OAuth client ID from Google Cloud                    |
-| `GOOGLE_CLIENT_SECRET` | — (required)             | OAuth client secret                                  |
-| `PORT`                 | `3789`                   | HTTP port                                            |
-| `BASE_URL`             | `http://localhost:$PORT` | Public base URL (must match the Google redirect URI) |
-| `DATA_DIR`             | `~/.g-tasks-mcp`         | Token/client storage directory                       |
+| Variable                                | Default                                      | Purpose                                                               |
+| --------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------- |
+| GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET | Required                                     | Existing Google Web OAuth credentials                                 |
+| PORT                                    | 3789                                         | HTTP listener port                                                    |
+| HOST                                    | 127.0.0.1                                    | Listener interface; local mode requires loopback                      |
+| BASE_URL                                | http://localhost:$PORT                       | Canonical origin for issuer, MCP resource and runtime Google callback |
+| DEPLOYMENT_MODE                         | local                                        | hosted requires HTTPS BASE_URL and TRUST_PROXY                        |
+| DATA_DIR                                | ~/.g-tasks-mcp                               | Private state and writer lock                                         |
+| OWNER_GOOGLE_SUB                        | Stored by setup                              | Optional independently verified owner override; conflicts fail        |
+| SETUP_URL                               | http://localhost:$PORT/oauth/google/callback | Separately registered loopback enrollment callback                    |
+| TRUST_PROXY                             | Disabled                                     | Explicit trusted reverse-proxy IPs/subnets; required in hosted mode   |
+| BROWSER_ORIGINS                         | None                                         | Additional allowed browser MCP origins                                |
+
+Changing BASE_URL requires callback registration and new resource-bound client
+access. Host/Origin validation is separate from interface binding. Client OAuth
+registration supports explicit `none` and `client_secret_post` authentication,
+HTTPS callbacks and restricted HTTP loopback callbacks. Numeric `127.0.0.1`
+callback ports may vary; `localhost` callbacks match exactly. Client ID Metadata
+Documents, Basic client authentication and native stdio are not implemented.
+
+Run `npm test`, `npm run typecheck` and `npm run build` for offline verification.
+Real Google consent, host routing and individual harness paths are tracked
+separately in [the validation record](specs/epic-owner-auth/host-validation.md).
 
 ## License
 

@@ -1,0 +1,57 @@
+{
+  "story_id": "S2",
+  "authored_by": "story-planner",
+  "authored_at": "2026-10-05T12:37:59.357850+00:00",
+  "questions": [
+    {
+      "question_id": "VQ-S2-006",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-FLOW-1",
+      "question": "Does executable evidence establish: Assembled HTTP discovery, registration, consent, mocked external Google exchange, token use, refresh, revoke and restart satisfy access boundaries while existing Tasks tools remain available."
+    },
+    {
+      "question_id": "VQ-S2-007",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-FLOW-2",
+      "question": "Does executable evidence establish: Asynchronous Google events and success/failure responses cannot reactivate disconnected/revoked credentials or grants; transient failures preserve state."
+    },
+    {
+      "question_id": "VQ-S2-022",
+      "phase": "pre-impl",
+      "category": "QUALITY",
+      "question": "Are failures redacted and changes limited to the reviewed authentication scope?"
+    },
+    {
+      "question_id": "VQ-S2-023",
+      "phase": "pre-impl",
+      "category": "ARCHITECTURE",
+      "question": "Does one auth module own each invariant with typed transitions and no duplicated policy?"
+    },
+    {
+      "question_id": "VQ-S2-024",
+      "phase": "pre-impl",
+      "category": "TEST",
+      "question": "Do real HTTP and stateful interleavings distinguish owner approval from stored credentials?"
+    },
+    {
+      "question_id": "VQ-S2-025",
+      "phase": "pre-impl",
+      "category": "SECURITY",
+      "question": "Are wrong-owner, replay, resource, scope and cross-client boundaries enforced by production code?"
+    },
+    {
+      "question_id": "VQ-S2-026",
+      "phase": "pre-impl",
+      "category": "BEST_PRACTICES",
+      "question": "Are atomic persistence, lifecycle limits and deployment defaults explicit and tested?"
+    },
+    {
+      "question_id": "VQ-S2-090",
+      "phase": "pre-impl",
+      "category": "TEST",
+      "question": "Does evidence cover every frozen checklist and generated applicable ordering in acceptance-criteria.md, with real production composition and no live path inferred from mocked tests?"
+    }
+  ]
+}

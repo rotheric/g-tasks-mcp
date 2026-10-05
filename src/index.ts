@@ -1,19 +1,45 @@
-import { assertConfig, config } from './config.js';
-import { createApp } from './app.js';
-import { storage } from './storage.js';
+#!/usr/bin/env node
+import { assertConfig, config } from "./config.js";
+import { createApp } from "./app.js";
+import { storage } from "./storage.js";
+import { command } from "./setup.js";
 
-assertConfig();
-
-const app = createApp();
-const mcpUrl = new URL('/mcp', config.baseUrl);
-
-app.listen(config.port, () => {
-  const connected = storage.readGoogleTokens() !== null;
-  console.log(`Google Tasks MCP server listening on ${config.baseUrl}`);
-  console.log(`  MCP endpoint:     ${mcpUrl.href}`);
-  console.log(`  Google account:   ${connected ? 'connected' : 'not connected yet (browser consent on first use)'}`);
-  console.log(`  Token storage:    ${config.dataDir}`);
-  console.log('');
-  console.log('Connect from Claude Code:');
-  console.log(`  claude mcp add --transport http google-tasks ${mcpUrl.href}`);
+async function main(): Promise<void> {
+  if (process.argv.length > 2) {
+    await command(process.argv.slice(2));
+    return;
+  }
+  assertConfig();
+  storage.acquire();
+  try {
+    if (config.ownerSub) storage.pinOwner(config.ownerSub);
+    if (!storage.snapshot().owner)
+      throw new Error(
+        "Owner setup required: stop the service and run g-tasks-mcp setup",
+      );
+    const app = createApp();
+    const server = app.listen(config.port, config.host, () =>
+      console.log(
+        `Google Tasks MCP: ${config.baseUrl}/mcp (bind ${config.host})`,
+      ),
+    );
+    server.once("error", () => {
+      storage.release();
+      console.error("Could not bind HTTP listener");
+      process.exitCode = 1;
+    });
+    const shutdown = () => {
+      server.close(() => storage.release());
+      server.closeAllConnections();
+    };
+    process.once("SIGINT", shutdown);
+    process.once("SIGTERM", shutdown);
+  } catch (err) {
+    storage.release();
+    throw err;
+  }
+}
+void main().catch((err) => {
+  console.error(err instanceof Error ? err.message : "Startup failed");
+  process.exitCode = 1;
 });

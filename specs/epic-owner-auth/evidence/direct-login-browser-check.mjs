@@ -1,0 +1,45 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+const {chromium} = await import(process.argv[3]);
+const compiled = process.argv[2];
+const {createApp} = await import(`${compiled}/src/app.js`);
+const {Storage} = await import(`${compiled}/src/storage.js`);
+const {loadConfig} = await import(`${compiled}/src/config.js`);
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'gtasks-browser-state-'));
+const store=new Storage(dir);store.acquire();store.pinOwner('synthetic-owner');
+store.provision('synthetic-owner',{refresh_token:'synthetic-refresh'},store.revision('initial'),'initial');
+const c=loadConfig({GOOGLE_CLIENT_ID:'synthetic',GOOGLE_CLIENT_SECRET:'synthetic',PORT:'37890',DATA_DIR:dir});
+let nonce,googleState;
+const google={url(p,state,n){nonce=n;googleState=state;return 'https://accounts.google.com/mock?state='+state},async exchange(){return {id_token:nonce}},async identity(tokens,n){assert.equal(tokens.id_token,n);return {sub:'synthetic-owner'}}};
+const server=createApp({store,configuration:c,google}).listen(37890,'127.0.0.1');
+await new Promise(resolve=>server.once('listening',resolve));
+const browser=await chromium.launch({headless:true});
+try {
+ const context=await browser.newContext();const page=await context.newPage();
+ const cdp=await context.newCDPSession(page);
+ await cdp.send('Fetch.enable',{patterns:[{urlPattern:'https://accounts.google.com/*'},{urlPattern:'http://127.0.0.1:39991/*'}]});
+ cdp.on('Fetch.requestPaused',async event=>{const external=event.request.url.startsWith('https://accounts.google.com/');await cdp.send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:200,responseHeaders:[{name:'Content-Type',value:'text/html'}],body:Buffer.from(external?'<title>Synthetic Google</title>Google reached':'<title>Client callback</title>Callback reached').toString('base64')});});
+ const register=async()=>await(await fetch('http://localhost:37890/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({client_name:'Direct login browser check',redirect_uris:['http://127.0.0.1:39991/callback'],token_endpoint_auth_method:'none',grant_types:['authorization_code','refresh_token'],response_types:['code']})})).json();
+ const url=client=> 'http://localhost:37890/authorize?'+new URLSearchParams({client_id:client.client_id,response_type:'code',redirect_uri:'http://127.0.0.1:39991/callback',code_challenge:createHash('sha256').update('A'.repeat(43)).digest('base64url'),code_challenge_method:'S256',state:'synthetic-client-state',scope:'tasks',resource:'http://localhost:37890/mcp'});
+ const first=await register();await page.goto(url(first));
+ assert.equal(new URL(page.url()).searchParams.has('iss'),false);assert.equal(await page.title(),'Synthetic Google');assert.equal(Object.keys(store.snapshot().grants).length,0);
+ console.log('PASS: new owner session navigates straight to Google; no grant');
+ await page.goto('http://localhost:37890/oauth/google/callback?'+new URLSearchParams({state:googleState,code:'synthetic-code'}));
+ await page.getByRole('button',{name:'Allow this client'}).waitFor();
+ assert.equal(Object.keys(store.snapshot().grants).length,0);
+ assert.equal(await page.getByRole('button',{name:'Continue to sign in'}).count(),0);
+ await page.getByRole('button',{name:'Allow this client'}).click();await page.waitForURL('http://127.0.0.1:39991/**');
+ assert.equal(Object.keys(store.snapshot().grants).length,0); // A code alone is not a redeemed grant.
+ assert(new URL(page.url()).searchParams.get('code'));
+ console.log('PASS: verified login shows approval; explicit approval reaches client callback');
+ const second=await register();await page.goto(url(second));
+ await page.getByRole('button',{name:'Allow this client'}).waitFor();
+ assert.equal(new URL(page.url()).pathname,'/auth/consent');
+ await page.getByRole('button',{name:'Deny',exact:true}).click();await page.waitForURL('http://127.0.0.1:39991/**');
+ assert.equal(new URL(page.url()).searchParams.get('error'),'access_denied');assert.equal(Object.keys(store.snapshot().grants).length,0);
+ console.log('PASS: signed-in owner skips Google, can deny unapproved client');
+ await context.close();
+} finally {await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));store.release();fs.rmSync(dir,{recursive:true,force:true});}
