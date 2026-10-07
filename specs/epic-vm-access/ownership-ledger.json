@@ -1,0 +1,60 @@
+{
+  "epic": "vm-access",
+  "concepts": [
+    {
+      "id": "configured-profiles",
+      "name": "Exact validated origins and deterministic resource/issuer mapping",
+      "owning_module": "access-config",
+      "type": "validation_rule"
+    },
+    {
+      "id": "transaction-binding",
+      "name": "Immutable transaction/code resource and issuer, persistent resource binding",
+      "owning_module": "authorization",
+      "type": "invariant"
+    },
+    {
+      "id": "http-policy",
+      "name": "Fixed Host routing, browser Origin and profile-specific metadata",
+      "owning_module": "http",
+      "type": "invariant"
+    }
+  ],
+  "stories": [
+    {
+      "story_id": "S1",
+      "surfaces_touched": [
+        "src/config.ts"
+      ]
+    },
+    {
+      "story_id": "S2",
+      "surfaces_touched": [
+        "src/auth/browser.ts",
+        "src/provider.ts",
+        "src/storage.ts"
+      ]
+    },
+    {
+      "story_id": "S3",
+      "surfaces_touched": [
+        "src/app.ts",
+        "src/auth/router.ts",
+        ".env.example",
+        "README.md"
+      ]
+    },
+    {
+      "story_id": "S4",
+      "surfaces_touched": [
+        "test/vm-access.test.ts",
+        "test/smoke.test.ts"
+      ]
+    }
+  ],
+  "reviewer_state": {
+    "last_story_reviewed": "S4",
+    "model_at": "2026-10-07T08:56:30.350663+00:00",
+    "cross_story_model_snapshot": "Independent structural recheck clean after revocation binding and mandatory cookie-form Origin fixes."
+  }
+}

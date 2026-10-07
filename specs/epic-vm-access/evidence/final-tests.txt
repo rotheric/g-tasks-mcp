@@ -1,0 +1,16 @@
+Final source after remediation: npm test, exit 0; npm run typecheck, exit 0; npm run build, exit 0.
+
+ok 126 - both authorization paths preserve strict redirects, fixed error issuer and owner checks
+  ---
+  duration_ms: 40.341418
+  type: 'test'
+  ...
+1..126
+# tests 126
+# suites 0
+# pass 126
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 41708.028548

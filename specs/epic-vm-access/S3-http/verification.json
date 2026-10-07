@@ -1,0 +1,51 @@
+{
+  "story_id": "S3",
+  "authored_by": "story-planner",
+  "authored_at": "2026-10-07T08:47:05.374637+00:00",
+  "questions": [
+    {
+      "question_id": "VQ-S3-001",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-VM-2",
+      "question": "Does assembled observable evidence satisfy AC-VM-2: Each allowed Host returns its fixed issuer/resource, metadata challenge and reachable client endpoints; VM authorization advertises canonical /authorize/vm; forwarded headers cannot alter identity."
+    },
+    {
+      "question_id": "VQ-S3-002",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-VM-7",
+      "question": "Does assembled observable evidence satisfy AC-VM-7: Deployment docs and example describe opt-in, unchanged host binding/callback, local HTTP trust, reauthorization, VM client callback forwarding and actual verification commands with truthful pending live results."
+    },
+    {
+      "question_id": "VQ-S3-003",
+      "phase": "pre-impl",
+      "category": "QUALITY",
+      "question": "Are invalid requests bounded and rejected without exposing credentials?"
+    },
+    {
+      "question_id": "VQ-S3-004",
+      "phase": "pre-impl",
+      "category": "ARCHITECTURE",
+      "question": "Are profile validation, transaction binding and HTTP selection owned once through typed seams?"
+    },
+    {
+      "question_id": "VQ-S3-005",
+      "phase": "pre-impl",
+      "category": "TEST",
+      "question": "Do behavioral matrices discriminate wrong-profile use and canonical browser composition?"
+    },
+    {
+      "question_id": "VQ-S3-006",
+      "phase": "pre-impl",
+      "category": "SECURITY",
+      "question": "Are Host/Origin/CSRF/PKCE/owner/approval and resource checks preserved for both profiles?"
+    },
+    {
+      "question_id": "VQ-S3-007",
+      "phase": "pre-impl",
+      "category": "BEST_PRACTICES",
+      "question": "Are local HTTP and live-client limitations documented without claiming deployment success?"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "epic_name": "vm-access",
+  "created_at": "2026-10-07T08:47:05.374637+00:00",
+  "total_stories": 4,
+  "stories": [
+    {
+      "id": "S1",
+      "name": "access-config",
+      "title": "access-config",
+      "description": "Implement and verify access-config",
+      "acceptance_criteria": [
+        "AC-VM-1"
+      ],
+      "complexity": "high",
+      "status": "in_progress",
+      "owning_module": "access-config"
+    },
+    {
+      "id": "S2",
+      "name": "authorization",
+      "title": "authorization",
+      "description": "Implement and verify authorization",
+      "acceptance_criteria": [
+        "AC-VM-3"
+      ],
+      "complexity": "high",
+      "status": "in_progress",
+      "owning_module": "authorization"
+    },
+    {
+      "id": "S3",
+      "name": "http",
+      "title": "http",
+      "description": "Implement and verify http",
+      "acceptance_criteria": [
+        "AC-VM-2",
+        "AC-VM-7"
+      ],
+      "complexity": "high",
+      "status": "in_progress",
+      "owning_module": "http"
+    },
+    {
+      "id": "S4",
+      "name": "integration",
+      "title": "integration",
+      "description": "Implement and verify integration",
+      "acceptance_criteria": [
+        "AC-VM-4",
+        "AC-VM-5",
+        "AC-VM-6"
+      ],
+      "complexity": "high",
+      "status": "in_progress",
+      "is_integration_story": true
+    }
+  ],
+  "story_order": [
+    "S1",
+    "S2",
+    "S3",
+    "S4"
+  ],
+  "cross_cutting_acs": [
+    {
+      "ac_id": "AC-VM-4",
+      "spanned_by": [
+        "S1",
+        "S2",
+        "S3"
+      ]
+    },
+    {
+      "ac_id": "AC-VM-5",
+      "spanned_by": [
+        "S1",
+        "S2",
+        "S3"
+      ]
+    },
+    {
+      "ac_id": "AC-VM-6",
+      "spanned_by": [
+        "S1",
+        "S2",
+        "S3"
+      ]
+    }
+  ]
+}

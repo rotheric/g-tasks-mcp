@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-10-07T08:47:05.374637+00:00",
+  "before_source_edits": true,
+  "commands": {
+    "npm test": {
+      "exit_code": 0,
+      "tests": 118,
+      "pass": 118
+    },
+    "npm run typecheck": {
+      "exit_code": 0
+    }
+  },
+  "log": "evidence/baseline-tests.txt"
+}

@@ -8,6 +8,7 @@ import {
   issuerFor,
   resourceFor,
   type Configuration,
+  type AccessProfile,
 } from "../config.js";
 import { Storage, type Revision } from "../storage.js";
 import {
@@ -30,6 +31,8 @@ interface Session {
   owner?: string;
 }
 interface Transaction {
+  resource: string;
+  issuer: string;
   id: string;
   sessionId: string;
   client: OAuthClientInformationFull;
@@ -43,6 +46,8 @@ interface Transaction {
   nonce?: string;
 }
 export interface IssuedCode {
+  resource: string;
+  issuer: string;
   clientId: string;
   redirect: string;
   challenge: string;
@@ -146,10 +151,14 @@ export class BrowserAuthorization {
     client: OAuthClientInformationFull,
     params: AuthorizationParams,
     res: Response,
+    identity: Pick<AccessProfile, "resource" | "issuer"> = {
+      resource: resourceFor(this.c),
+      issuer: issuerFor(this.c),
+    },
   ): Promise<void> {
     validateClient(client);
     scopes(params.scopes);
-    checkResource(params.resource, resourceFor(this.c));
+    checkResource(params.resource, identity.resource);
     if (
       !client.redirect_uris.some((uri) =>
         redirectMatches(params.redirectUri, uri),
@@ -164,6 +173,8 @@ export class BrowserAuthorization {
     if (this.transactions.size >= 100)
       throw new InvalidRequestError("Authorization capacity reached");
     const t: Transaction = {
+      resource: identity.resource,
+      issuer: identity.issuer,
       id: randomToken(),
       sessionId: session.id,
       client,
@@ -179,7 +190,7 @@ export class BrowserAuthorization {
       this.store.approved(
         client.client_id,
         redirectIdentity(params.redirectUri),
-        resourceFor(this.c),
+        t.resource,
       ) &&
       this.store.readGoogleTokens()
     ) {
@@ -198,7 +209,7 @@ export class BrowserAuthorization {
   ): string {
     const u = new URL(t.params.redirectUri);
     for (const [k, v] of Object.entries(values)) u.searchParams.set(k, v);
-    u.searchParams.set("iss", issuerFor(this.c));
+    u.searchParams.set("iss", t.issuer);
     if (t.params.state !== undefined)
       u.searchParams.set("state", t.params.state);
     return u.href;
@@ -212,12 +223,14 @@ export class BrowserAuthorization {
       !this.store.approved(
         t.client.client_id,
         redirectIdentity(t.params.redirectUri),
-        resourceFor(this.c),
+        t.resource,
       )
     )
       throw new Error("Authorization no longer valid");
     const code = randomToken();
     this.codes.set(code, {
+      resource: t.resource,
+      issuer: t.issuer,
       clientId: t.client.client_id,
       redirect: t.params.redirectUri,
       challenge: t.params.codeChallenge,
@@ -346,7 +359,7 @@ export class BrowserAuthorization {
           this.store.approve(
             t.client.client_id,
             redirectIdentity(t.params.redirectUri),
-            resourceFor(this.c),
+            t.resource,
           );
           this.complete(t, res);
         } else this.startGoogle(t, "tasks", res);
@@ -443,7 +456,7 @@ export class BrowserAuthorization {
             t.client.client_id,
             {
               redirect: redirectIdentity(t.params.redirectUri),
-              resource: resourceFor(this.c),
+              resource: t.resource,
             },
           );
           t.revision = this.store.revision(t.client.client_id);

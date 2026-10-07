@@ -1,0 +1,34 @@
+{
+  "module_name": "authorization",
+  "purpose": "authorization",
+  "public_api": [
+    "BrowserAuthorization.authorize",
+    "GoogleTasksOAuthProvider"
+  ],
+  "private_files": [
+    "src/auth/browser.ts",
+    "src/provider.ts"
+  ],
+  "owned_data": [
+    "transactions/codes"
+  ],
+  "dependencies_allowed": [
+    "configuration",
+    "Storage",
+    "SDK"
+  ],
+  "dependencies_forbidden": [
+    "untrusted URL derivation",
+    "global insecure-issuer override"
+  ],
+  "external_ports": [
+    "Google",
+    "Tasks"
+  ],
+  "events_emitted": [],
+  "events_consumed": [],
+  "test_targets": [
+    "test/vm-access.test.ts",
+    "test/smoke.test.ts"
+  ]
+}

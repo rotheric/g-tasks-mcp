@@ -186,7 +186,9 @@ async function fixture(
   const post = (url: string, body: Record<string, string | undefined>) =>
     request(url, {
       method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
+      headers: { "content-type": "application/x-www-form-urlencoded",
+        ...(url.startsWith("/auth/") ? { origin: new URL(c.baseUrl).origin } : {}),
+      },
       body: new URLSearchParams(
         Object.entries(body).filter(
           (entry): entry is [string, string] => entry[1] !== undefined,

@@ -16,7 +16,7 @@ import {
   InvalidTokenError,
   InvalidClientMetadataError,
 } from "@modelcontextprotocol/sdk/server/auth/errors.js";
-import { resourceFor, type Configuration } from "./config.js";
+import { accessProfilesFor, type AccessProfile, type Configuration } from "./config.js";
 import { Storage } from "./storage.js";
 import { BrowserAuthorization } from "./auth/browser.js";
 import {
@@ -34,6 +34,7 @@ export class GoogleTasksOAuthProvider implements OAuthServerProvider {
     readonly store: Storage,
     readonly c: Configuration,
     readonly browser: BrowserAuthorization,
+    readonly profile: AccessProfile = accessProfilesFor(c)[0],
   ) {
     this.clientsStore = {
       getClient: (id) => store.getClient(id),
@@ -59,14 +60,15 @@ export class GoogleTasksOAuthProvider implements OAuthServerProvider {
     params: AuthorizationParams,
     res: Response,
   ): Promise<void> {
-    await this.browser.authorize(client, params, res);
+    await this.browser.authorize(client, params, res, this.profile);
   }
   async challengeForAuthorizationCode(
     client: OAuthClientInformationFull,
     value: string,
   ): Promise<string> {
     const code = this.browser.code(value);
-    if (!code || code.clientId !== client.client_id)
+    if (!code || code.clientId !== client.client_id ||
+      code.resource !== this.profile.resource || code.issuer !== this.profile.issuer)
       throw new InvalidGrantError("Invalid or expired code");
     return code.challenge;
   }
@@ -79,9 +81,11 @@ export class GoogleTasksOAuthProvider implements OAuthServerProvider {
   ): Promise<OAuthTokens> {
     const code = this.browser.code(value);
     this.browser.codes.delete(value);
-    checkResource(resource, resourceFor(this.c));
+    checkResource(resource, this.profile.resource);
     if (
       !code ||
+      code.resource !== this.profile.resource ||
+      code.issuer !== this.profile.issuer ||
       code.clientId !== client.client_id ||
       redirect !== code.redirect ||
       !verifier ||
@@ -96,7 +100,7 @@ export class GoogleTasksOAuthProvider implements OAuthServerProvider {
       return this.store.issueGrant(
         client.client_id,
         redirectIdentity(code.redirect),
-        resourceFor(this.c),
+        this.profile.resource,
         code.revision,
       );
     } catch {
@@ -110,11 +114,11 @@ export class GoogleTasksOAuthProvider implements OAuthServerProvider {
     resource?: URL,
   ): Promise<OAuthTokens> {
     scopes(requestedScopes, false);
-    checkResource(resource, resourceFor(this.c));
+    checkResource(resource, this.profile.resource);
     const result = this.store.rotate(
       value,
       client.client_id,
-      resourceFor(this.c),
+      this.profile.resource,
     );
     if (!result)
       throw new InvalidGrantError(
@@ -123,19 +127,20 @@ export class GoogleTasksOAuthProvider implements OAuthServerProvider {
     return result;
   }
   async verifyAccessToken(value: string): Promise<AuthInfo> {
-    const entry = this.store.accessToken(value, resourceFor(this.c));
+    const entry = this.store.accessToken(value, this.profile.resource);
     if (!entry) throw new InvalidTokenError("Invalid or expired access token");
     return {
       token: value,
       clientId: entry.grant.clientId,
       scopes: entry.grant.scopes,
       expiresAt: entry.expiresAt,
+      resource: new URL(this.profile.resource),
     };
   }
   async revokeToken(
     client: OAuthClientInformationFull,
     request: OAuthTokenRevocationRequest,
   ): Promise<void> {
-    this.store.revokeToken(request.token, client.client_id);
+    this.store.revokeToken(request.token, client.client_id, this.profile.resource);
   }
 }

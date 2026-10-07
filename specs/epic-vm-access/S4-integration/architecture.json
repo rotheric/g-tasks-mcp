@@ -1,0 +1,28 @@
+{
+  "module_name": "integration",
+  "purpose": "integration",
+  "public_api": [],
+  "private_files": [
+    "test/vm-access.test.ts"
+  ],
+  "owned_data": [],
+  "dependencies_allowed": [
+    "configuration",
+    "Storage",
+    "SDK"
+  ],
+  "dependencies_forbidden": [
+    "untrusted URL derivation",
+    "global insecure-issuer override"
+  ],
+  "external_ports": [
+    "Google",
+    "Tasks"
+  ],
+  "events_emitted": [],
+  "events_consumed": [],
+  "test_targets": [
+    "test/vm-access.test.ts",
+    "test/smoke.test.ts"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "story_id": "S4",
+  "authored_by": "story-planner",
+  "authored_at": "2026-10-07T08:47:05.374637+00:00",
+  "questions": [
+    {
+      "question_id": "VQ-S4-001",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-VM-4",
+      "question": "Does assembled observable evidence satisfy AC-VM-4: For both profiles and both code/refresh/bearer cross-profile directions, wrong-resource use is rejected; same-profile grants work across reload and refresh rotation preserves binding."
+    },
+    {
+      "question_id": "VQ-S4-002",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-VM-5",
+      "question": "Does assembled observable evidence satisfy AC-VM-5: Generate both Host profiles, slash/no-slash MCP paths, unexpected Origins and forwarded/unconfigured authorities: browser mutations require canonical Origin and CSRF; VM Host cannot run browser routes; MCP cross-origin requests are rejected."
+    },
+    {
+      "question_id": "VQ-S4-003",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-VM-6",
+      "question": "Does assembled observable evidence satisfy AC-VM-6: Assembled fixture flows for both profiles complete registration, browser Google owner login, explicit approval, PKCE exchange, MCP initialization and read-only task tool, then refresh and revocation."
+    },
+    {
+      "question_id": "VQ-S4-004",
+      "phase": "pre-impl",
+      "category": "QUALITY",
+      "question": "Are invalid requests bounded and rejected without exposing credentials?"
+    },
+    {
+      "question_id": "VQ-S4-005",
+      "phase": "pre-impl",
+      "category": "ARCHITECTURE",
+      "question": "Are profile validation, transaction binding and HTTP selection owned once through typed seams?"
+    },
+    {
+      "question_id": "VQ-S4-006",
+      "phase": "pre-impl",
+      "category": "TEST",
+      "question": "Do behavioral matrices discriminate wrong-profile use and canonical browser composition?"
+    },
+    {
+      "question_id": "VQ-S4-007",
+      "phase": "pre-impl",
+      "category": "SECURITY",
+      "question": "Are Host/Origin/CSRF/PKCE/owner/approval and resource checks preserved for both profiles?"
+    },
+    {
+      "question_id": "VQ-S4-008",
+      "phase": "pre-impl",
+      "category": "BEST_PRACTICES",
+      "question": "Are local HTTP and live-client limitations documented without claiming deployment success?"
+    },
+    {
+      "question_id": "VQ-S4-009",
+      "phase": "post-impl",
+      "category": "SECURITY",
+      "question": "Does cross-profile revocation leave both access and refresh grants usable for the issuing resource, in both directions?"
+    },
+    {
+      "question_id": "VQ-S4-010",
+      "phase": "post-impl",
+      "category": "SECURITY",
+      "question": "Do cookie forms reject missing/null/foreign Origins, while public OAuth authorization POST retains absent-Origin support and rejects supplied foreign Origins?"
+    }
+  ]
+}

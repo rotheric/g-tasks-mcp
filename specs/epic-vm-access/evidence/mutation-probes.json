@@ -1,0 +1,80 @@
+{
+  "method": "bounded manual fault-injection probes; no mutation framework configured; not exhaustive",
+  "results": [
+    {
+      "mutant": "host-allowlist",
+      "file": "src/app.ts",
+      "exit_code": 1,
+      "killed": true,
+      "failure_tests": [
+        "not ok 1 - VM origin is narrowly opt-in and cannot change local listener or hosted policy",
+        "not ok 2 - metadata and bearer challenges use fixed Host profiles and ignore forwarded identity"
+      ],
+      "scope": "focused eight-test VM protocol matrix; disposable copy, production tree unchanged"
+    },
+    {
+      "mutant": "browser-host",
+      "file": "src/app.ts",
+      "exit_code": 1,
+      "killed": true,
+      "failure_tests": [
+        "not ok 7 - browser authority, slash MCP Origin checks and CSRF stay enforced for both profiles"
+      ],
+      "scope": "focused eight-test VM protocol matrix; disposable copy, production tree unchanged"
+    },
+    {
+      "mutant": "code-profile",
+      "file": "src/provider.ts",
+      "exit_code": 1,
+      "killed": true,
+      "failure_tests": [
+        "not ok 5 - resource and profile binding rejects cross-profile codes, refresh and bearer for http://localhost:3789",
+        "not ok 6 - resource and profile binding rejects cross-profile codes, refresh and bearer for http://host.lima.internal:3789"
+      ],
+      "scope": "focused eight-test VM protocol matrix; disposable copy, production tree unchanged"
+    },
+    {
+      "mutant": "bearer-resource",
+      "file": "src/storage.ts",
+      "exit_code": 1,
+      "killed": true,
+      "failure_tests": [
+        "not ok 5 - resource and profile binding rejects cross-profile codes, refresh and bearer for http://localhost:3789",
+        "not ok 6 - resource and profile binding rejects cross-profile codes, refresh and bearer for http://host.lima.internal:3789"
+      ],
+      "scope": "focused eight-test VM protocol matrix; disposable copy, production tree unchanged"
+    },
+    {
+      "mutant": "refresh-resource",
+      "file": "src/storage.ts",
+      "exit_code": 1,
+      "killed": true,
+      "failure_tests": [
+        "not ok 5 - resource and profile binding rejects cross-profile codes, refresh and bearer for http://localhost:3789",
+        "not ok 6 - resource and profile binding rejects cross-profile codes, refresh and bearer for http://host.lima.internal:3789"
+      ],
+      "scope": "focused eight-test VM protocol matrix; disposable copy, production tree unchanged"
+    },
+    {
+      "mutant": "revocation-resource",
+      "file": "src/storage.ts",
+      "exit_code": 1,
+      "killed": true,
+      "failure_tests": [
+        "not ok 5 - resource and profile binding rejects cross-profile codes, refresh and bearer for http://localhost:3789",
+        "not ok 6 - resource and profile binding rejects cross-profile codes, refresh and bearer for http://host.lima.internal:3789"
+      ],
+      "scope": "focused eight-test VM protocol matrix; disposable copy, production tree unchanged"
+    },
+    {
+      "mutant": "route-case",
+      "file": "src/app.ts",
+      "exit_code": 1,
+      "killed": true,
+      "failure_tests": [
+        "not ok 7 - browser authority, slash MCP Origin checks and CSRF stay enforced for both profiles"
+      ],
+      "scope": "focused eight-test VM protocol matrix; disposable copy, production tree unchanged"
+    }
+  ]
+}

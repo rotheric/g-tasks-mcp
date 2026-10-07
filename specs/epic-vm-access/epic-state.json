@@ -1,0 +1,130 @@
+{
+  "epic_name": "vm-access",
+  "status": "in_progress",
+  "phase": "IN_PROGRESS",
+  "created_at": "2026-10-07T08:47:05.374637+00:00",
+  "updated_at": "2026-10-07T09:11:57.852892+00:00",
+  "pre_existing_dirty_files": [
+    ".mcp.json",
+    "g-tasks-mcp-vm-access-proposal.md"
+  ],
+  "completed_stories": [],
+  "escalated_stories": [],
+  "phase_history": [
+    {
+      "phase": "SPEC_VALIDATED",
+      "timestamp": "2026-10-07T08:47:05.374637+00:00",
+      "trigger": "Astra design/spec opinion accepted before implementation"
+    },
+    {
+      "phase": "PLANNING",
+      "timestamp": "2026-10-07T08:47:05.374637+00:00",
+      "trigger": "architecture and VQs frozen"
+    },
+    {
+      "phase": "IN_PROGRESS",
+      "timestamp": "2026-10-07T08:47:05.374637+00:00",
+      "trigger": "user-authorized implementation begins"
+    }
+  ],
+  "consumer_sha": "e39bd4636ab06830a551ec17217d7966a3bf8c4a",
+  "plugin_sha": "663cd7813141fc4e169d91747e032f03f506d956",
+  "models": {
+    "lead": "unknown",
+    "implementer": "unknown",
+    "examiner": "unknown"
+  },
+  "ownership_ledger_path": "ownership-ledger.json",
+  "gate_runs": [
+    {
+      "gate_id": "spec_adversary_review",
+      "outcome": "fired_remediated",
+      "detail": "Astra design/spec opinion before edits corrected browser profile selection, per-code identity and /mcp/ Origin coverage."
+    },
+    {
+      "gate_id": "mutation",
+      "outcome": "aborted",
+      "detail": "Seven bounded manual probes killed in disposable copies; exhaustive configured mutation framework unavailable. No full mutation gate pass or waiver claimed."
+    },
+    {
+      "gate_id": "e2e",
+      "outcome": "aborted",
+      "detail": "126/126 fixtures and typecheck/build; independent 70/70. After user Mac restart, 15 live VM routing/discovery/negative probes pass. Actual Mac/browser/client callback/authenticated MCP/read/VM refresh pending."
+    },
+    {
+      "gate_id": "pre_commit_review",
+      "outcome": "fired_remediated",
+      "detail": "Production code reviewed clean independently by gpt-5.6-sol and fresh gpt-6-astra after remediation. User explicitly authorized commit after live VM discovery/routing validation. Pending authenticated delivery evidence and unavailable canonical examiner remain recorded; commit does not close those requirements.",
+      "structural_findings": {
+        "surfaced": 2,
+        "acted": 2,
+        "disclosed_unacted": 0
+      }
+    }
+  ],
+  "manual_validation": [
+    {
+      "ac_id": "MV-1",
+      "status": "pending",
+      "owner": "Mac operator",
+      "blocked_on": "Actual clients, Mac browser and VM callback reachability",
+      "evidence": "User restarted Mac service; 15 live VM routing/discovery/negative probes pass (evidence/vm-live-probes.json). Authenticated browser/MCP/read/refresh remain unverified."
+    }
+  ],
+  "review_models": {
+    "structural": "gpt-5.6-sol",
+    "fresh_adversarial": "gpt-6-astra",
+    "canonical_examiner": "unavailable: gpt-5.6-terra"
+  },
+  "remaining_work": [
+    "Verify actual Mac and VM clients authorize with Mac browser, read-only task and VM refresh; user deployed and live VM discovery/routing probes now pass",
+    "Canonical independent examiner model unavailable; no terra gate claimed",
+    "No configured exhaustive mutation framework; bounded seven-probe audit passed"
+  ],
+  "ac_closure": [
+    {
+      "ac_id": "AC-VM-1",
+      "status": "met",
+      "evidence": "Fresh independent Astra VQ evidence and test/vm-access.test.ts; full 126/126 tests. Actual reachability is pending for AC-VM-2.",
+      "closure_basis": "evidence"
+    },
+    {
+      "ac_id": "AC-VM-2",
+      "status": "unmet",
+      "evidence": "Fresh independent Astra VQ evidence and test/vm-access.test.ts; full 126/126 tests. Actual reachability is pending for AC-VM-2."
+    },
+    {
+      "ac_id": "AC-VM-3",
+      "status": "met",
+      "evidence": "Fresh independent Astra VQ evidence and test/vm-access.test.ts; full 126/126 tests. Actual reachability is pending for AC-VM-2.",
+      "closure_basis": "evidence"
+    },
+    {
+      "ac_id": "AC-VM-4",
+      "status": "met",
+      "evidence": "Fresh independent Astra VQ evidence and test/vm-access.test.ts; full 126/126 tests. Actual reachability is pending for AC-VM-2.",
+      "closure_basis": "evidence"
+    },
+    {
+      "ac_id": "AC-VM-5",
+      "status": "met",
+      "evidence": "Fresh independent Astra VQ evidence and test/vm-access.test.ts; full 126/126 tests. Actual reachability is pending for AC-VM-2.",
+      "closure_basis": "evidence"
+    },
+    {
+      "ac_id": "AC-VM-6",
+      "status": "met",
+      "evidence": "Fresh independent Astra VQ evidence and test/vm-access.test.ts; full 126/126 tests. Actual reachability is pending for AC-VM-2.",
+      "closure_basis": "evidence"
+    },
+    {
+      "ac_id": "AC-VM-7",
+      "status": "met",
+      "evidence": "README.md and .env.example inspected by both reviewers; documented trust, callback, configuration and pending live evidence."
+    }
+  ],
+  "commit_authorization": {
+    "timestamp": "2026-10-07T09:11:57.852892+00:00",
+    "instruction": "User explicitly requested commit after the 15 live VM routing checks. Commit the reviewed patch with remaining authenticated host/VM validation documented; no AC waiver or completion inferred."
+  }
+}

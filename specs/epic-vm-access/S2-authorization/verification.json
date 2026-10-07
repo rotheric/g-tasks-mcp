@@ -1,0 +1,44 @@
+{
+  "story_id": "S2",
+  "authored_by": "story-planner",
+  "authored_at": "2026-10-07T08:47:05.374637+00:00",
+  "questions": [
+    {
+      "question_id": "VQ-S2-001",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-VM-3",
+      "question": "Does assembled observable evidence satisfy AC-VM-3: Canonical browser authorization uses the selected profile even with omitted resource; Google callback and cookie origin remain canonical; owner/client approval, redirect and issuer error checks apply to both paths."
+    },
+    {
+      "question_id": "VQ-S2-002",
+      "phase": "pre-impl",
+      "category": "QUALITY",
+      "question": "Are invalid requests bounded and rejected without exposing credentials?"
+    },
+    {
+      "question_id": "VQ-S2-003",
+      "phase": "pre-impl",
+      "category": "ARCHITECTURE",
+      "question": "Are profile validation, transaction binding and HTTP selection owned once through typed seams?"
+    },
+    {
+      "question_id": "VQ-S2-004",
+      "phase": "pre-impl",
+      "category": "TEST",
+      "question": "Do behavioral matrices discriminate wrong-profile use and canonical browser composition?"
+    },
+    {
+      "question_id": "VQ-S2-005",
+      "phase": "pre-impl",
+      "category": "SECURITY",
+      "question": "Are Host/Origin/CSRF/PKCE/owner/approval and resource checks preserved for both profiles?"
+    },
+    {
+      "question_id": "VQ-S2-006",
+      "phase": "pre-impl",
+      "category": "BEST_PRACTICES",
+      "question": "Are local HTTP and live-client limitations documented without claiming deployment success?"
+    }
+  ]
+}

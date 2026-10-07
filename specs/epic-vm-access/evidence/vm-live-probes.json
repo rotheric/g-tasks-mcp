@@ -1,0 +1,268 @@
+{
+  "timestamp": "2026-10-07T09:09:51.042974+00:00",
+  "environment": "Linux VM; requests to Mac service through host.lima.internal",
+  "results": [
+    {
+      "check": "VM MCP authentication challenge",
+      "method": "GET",
+      "path": "/mcp/",
+      "status": 401,
+      "expected_status": 401,
+      "www_authenticate": "Bearer error=\"invalid_token\", error_description=\"Missing Authorization header\", scope=\"tasks\", resource_metadata=\"http://host.lima.internal:3789/.well-known/oauth-protected-resource/mcp\"",
+      "body": {
+        "error": "invalid_token",
+        "error_description": "Missing Authorization header"
+      }
+    },
+    {
+      "check": "VM resource metadata",
+      "method": "GET",
+      "path": "/.well-known/oauth-protected-resource/mcp",
+      "status": 200,
+      "expected_status": 200,
+      "www_authenticate": null,
+      "body": {
+        "resource": "http://host.lima.internal:3789/mcp",
+        "authorization_servers": [
+          "http://host.lima.internal:3789/"
+        ],
+        "scopes_supported": [
+          "tasks"
+        ],
+        "resource_name": "Google Tasks"
+      }
+    },
+    {
+      "check": "VM authorization metadata",
+      "method": "GET",
+      "path": "/.well-known/oauth-authorization-server",
+      "status": 200,
+      "expected_status": 200,
+      "www_authenticate": null,
+      "body": {
+        "issuer": "http://host.lima.internal:3789/",
+        "authorization_endpoint": "http://localhost:3789/authorize/vm",
+        "token_endpoint": "http://host.lima.internal:3789/token",
+        "registration_endpoint": "http://host.lima.internal:3789/register",
+        "revocation_endpoint": "http://host.lima.internal:3789/revoke",
+        "response_types_supported": [
+          "code"
+        ],
+        "grant_types_supported": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "code_challenge_methods_supported": [
+          "S256"
+        ],
+        "scopes_supported": [
+          "tasks"
+        ],
+        "token_endpoint_auth_methods_supported": [
+          "none",
+          "client_secret_post"
+        ],
+        "revocation_endpoint_auth_methods_supported": [
+          "none",
+          "client_secret_post"
+        ],
+        "authorization_response_iss_parameter_supported": true
+      }
+    },
+    {
+      "check": "Canonical host profile via Lima transport (not an actual Mac-client test)",
+      "method": "GET",
+      "path": "/.well-known/oauth-authorization-server",
+      "status": 200,
+      "expected_status": 200,
+      "www_authenticate": null,
+      "body": {
+        "issuer": "http://localhost:3789/",
+        "authorization_endpoint": "http://localhost:3789/authorize",
+        "token_endpoint": "http://localhost:3789/token",
+        "registration_endpoint": "http://localhost:3789/register",
+        "revocation_endpoint": "http://localhost:3789/revoke",
+        "response_types_supported": [
+          "code"
+        ],
+        "grant_types_supported": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "code_challenge_methods_supported": [
+          "S256"
+        ],
+        "scopes_supported": [
+          "tasks"
+        ],
+        "token_endpoint_auth_methods_supported": [
+          "none",
+          "client_secret_post"
+        ],
+        "revocation_endpoint_auth_methods_supported": [
+          "none",
+          "client_secret_post"
+        ],
+        "authorization_response_iss_parameter_supported": true
+      }
+    },
+    {
+      "check": "Unconfigured Host remains rejected",
+      "method": "GET",
+      "path": "/mcp/",
+      "status": 421,
+      "expected_status": 421,
+      "www_authenticate": null,
+      "body": {
+        "error": "Unexpected host"
+      }
+    },
+    {
+      "check": "Forwarded headers cannot change identity",
+      "method": "GET",
+      "path": "/.well-known/oauth-authorization-server",
+      "status": 200,
+      "expected_status": 200,
+      "www_authenticate": null,
+      "body": {
+        "issuer": "http://host.lima.internal:3789/",
+        "authorization_endpoint": "http://localhost:3789/authorize/vm",
+        "token_endpoint": "http://host.lima.internal:3789/token",
+        "registration_endpoint": "http://host.lima.internal:3789/register",
+        "revocation_endpoint": "http://host.lima.internal:3789/revoke",
+        "response_types_supported": [
+          "code"
+        ],
+        "grant_types_supported": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "code_challenge_methods_supported": [
+          "S256"
+        ],
+        "scopes_supported": [
+          "tasks"
+        ],
+        "token_endpoint_auth_methods_supported": [
+          "none",
+          "client_secret_post"
+        ],
+        "revocation_endpoint_auth_methods_supported": [
+          "none",
+          "client_secret_post"
+        ],
+        "authorization_response_iss_parameter_supported": true
+      }
+    },
+    {
+      "check": "VM authority cannot serve browser authorization",
+      "method": "GET",
+      "path": "/authorize/vm",
+      "status": 421,
+      "expected_status": 421,
+      "www_authenticate": null,
+      "body": {
+        "error": "Browser authorization requires canonical host"
+      }
+    },
+    {
+      "check": "Foreign Origin rejected including trailing slash",
+      "method": "GET",
+      "path": "/mcp/",
+      "status": 403,
+      "expected_status": 403,
+      "www_authenticate": null,
+      "body": {
+        "error": "Unexpected origin"
+      }
+    },
+    {
+      "check": "Mixed-case foreign Origin rejected",
+      "method": "GET",
+      "path": "/MCP/",
+      "status": 403,
+      "expected_status": 403,
+      "www_authenticate": null,
+      "body": {
+        "error": "Unexpected origin"
+      }
+    },
+    {
+      "check": "Invalid bearer rejected",
+      "method": "GET",
+      "path": "/mcp/",
+      "status": 401,
+      "expected_status": 401,
+      "www_authenticate": "Bearer error=\"invalid_token\", error_description=\"Invalid or expired access token\", scope=\"tasks\", resource_metadata=\"http://host.lima.internal:3789/.well-known/oauth-protected-resource/mcp\"",
+      "body": {
+        "error": "invalid_token",
+        "error_description": "Invalid or expired access token"
+      }
+    },
+    {
+      "check": "Token route reachable",
+      "method": "GET",
+      "path": "/token",
+      "status": 405,
+      "expected_status": 405,
+      "www_authenticate": null,
+      "body": {
+        "error": "method_not_allowed",
+        "error_description": "The method GET is not allowed for this endpoint"
+      }
+    },
+    {
+      "check": "Registration route reachable",
+      "method": "GET",
+      "path": "/register",
+      "status": 405,
+      "expected_status": 405,
+      "www_authenticate": null,
+      "body": {
+        "error": "method_not_allowed",
+        "error_description": "The method GET is not allowed for this endpoint"
+      }
+    },
+    {
+      "check": "Revocation route reachable",
+      "method": "GET",
+      "path": "/revoke",
+      "status": 405,
+      "expected_status": 405,
+      "www_authenticate": null,
+      "body": {
+        "error": "method_not_allowed",
+        "error_description": "The method GET is not allowed for this endpoint"
+      }
+    },
+    {
+      "check": "Unauthenticated code exchange rejected",
+      "method": "POST",
+      "path": "/token",
+      "status": 400,
+      "expected_status": 400,
+      "www_authenticate": null,
+      "body": {
+        "error": "invalid_client",
+        "error_description": "Invalid client_id"
+      }
+    },
+    {
+      "check": "Unauthenticated refresh rejected",
+      "method": "POST",
+      "path": "/token",
+      "status": 400,
+      "expected_status": 400,
+      "www_authenticate": null,
+      "body": {
+        "error": "invalid_client",
+        "error_description": "Invalid client_id"
+      }
+    }
+  ],
+  "limitations": [
+    "No actual Mac client request; canonical Host profile tested through Lima transport only",
+    "No successful browser authorization, authenticated MCP initialization/task read or refresh; no VM OAuth credentials available",
+    "No client registration or server state mutation performed"
+  ]
+}

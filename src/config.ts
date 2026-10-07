@@ -21,6 +21,7 @@ export interface Configuration {
   port: number;
   host: string;
   baseUrl: string;
+  vmAccessOrigin?: string;
   mode: "local" | "hosted";
   googleClientId: string;
   googleClientSecret: string;
@@ -54,6 +55,7 @@ export function loadConfig(
     mode,
     host: env.HOST ?? "127.0.0.1",
     baseUrl: (env.BASE_URL ?? `http://localhost:${port}`).replace(/\/$/, ""),
+    vmAccessOrigin: env.VM_ACCESS_ORIGIN?.replace(/\/$/, "") || undefined,
     googleClientId: env.GOOGLE_CLIENT_ID ?? "",
     googleClientSecret: env.GOOGLE_CLIENT_SECRET ?? "",
     ownerSub: env.OWNER_GOOGLE_SUB ?? "",
@@ -70,6 +72,24 @@ export const config = loadConfig();
 export const issuerFor = (c: Configuration): string => new URL(c.baseUrl).href;
 export const resourceFor = (c: Configuration): string =>
   new URL("/mcp", c.baseUrl).href;
+export interface AccessProfile {
+  origin: string;
+  issuer: string;
+  resource: string;
+  authorizationPath: string;
+}
+export function accessProfilesFor(c: Configuration): AccessProfile[] {
+  const profile = (origin: string, authorizationPath: string): AccessProfile => ({
+    origin: new URL(origin).origin,
+    issuer: new URL(origin).href,
+    resource: new URL("/mcp", origin).href,
+    authorizationPath,
+  });
+  return [
+    profile(c.baseUrl, "/authorize"),
+    ...(c.vmAccessOrigin ? [profile(c.vmAccessOrigin, "/authorize/vm")] : []),
+  ];
+}
 export function assertConfig(c: Configuration = config): void {
   if (c.search?.enabled) {
     for (const value of [c.search.qdrantUrl, c.search.embeddingUrl]) {
@@ -122,6 +142,19 @@ export function assertConfig(c: Configuration = config): void {
       !["http:", "https:"].includes(url.protocol))
   )
     throw new Error("Local mode requires a loopback URL and HOST=127.0.0.1");
+  if (c.vmAccessOrigin) {
+    const vm = new URL(c.vmAccessOrigin);
+    if (
+      c.mode !== "local" ||
+      vm.protocol !== "http:" ||
+      vm.hostname !== "host.lima.internal" ||
+      Number(vm.port || "80") !== c.port ||
+      vm.origin !== c.vmAccessOrigin
+    )
+      throw new Error(
+        "VM_ACCESS_ORIGIN requires local mode and http://host.lima.internal:PORT without a path or credentials",
+      );
+  }
   const setup = new URL(c.setupUrl);
   if (
     setup.protocol !== "http:" ||

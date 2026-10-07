@@ -1,0 +1,5 @@
+# Architecture
+
+Explicit access-profile routing. access-config owns validated origins and AccessProfile {origin, issuer, resource, authorizationPath}. authorization owns shared BrowserAuthorization sessions/transactions and per-profile providers; codes carry immutable resource and issuer. Persistent Storage resource binding remains unchanged. http owns profile routing, explicit SDK metadata/endpoint mounting, canonical-only browser routes, Origin/Host policy. integration consumes all seams without duplicating production invariants.
+
+One resource maps to one issuer under configuration. VM origin is narrowly local-only HTTP host.lima.internal at configured PORT; listener stays 127.0.0.1. Browser routes use canonical authority; /authorize/vm fixes VM profile even if resource omitted. No request-derived URLs, global SDK insecure override or storage migration. Shared SDK handlers preserve OAuth parsing and rate limiting. Trusted forwarded headers cannot select profile. Browser callback to VM client is a separate operational requirement.

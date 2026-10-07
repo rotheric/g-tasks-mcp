@@ -116,6 +116,73 @@ Choose and record a tested bridge version before deployment. Its OAuth token cac
 is separate from this server's storage. Bridge options are documented in
 [mcp-remote](https://github.com/punkpeye/mcp-remote).
 
+### Connect from a Lima VM
+
+Run **one server on the Mac**. Host clients keep `http://localhost:3789/mcp/`;
+VM clients use `http://host.lima.internal:3789/mcp/`. In the Mac server's `.env`,
+opt in to VM access:
+
+```dotenv
+DEPLOYMENT_MODE=local
+HOST=127.0.0.1
+BASE_URL=http://localhost:3789
+VM_ACCESS_ORIGIN=http://host.lima.internal:3789
+```
+
+Build with `npm run build`, then restart the existing Mac service after updating
+its environment. Keep the registered Google callback at
+`http://localhost:3789/oauth/google/callback`. No service runs in the VM, and the
+listener stays on Mac loopback. Lima must make that listener reachable; verify
+this in the actual VM's networking mode before changing interface binding.
+
+This option accepts only an HTTP `host.lima.internal` origin at `PORT`, in local
+mode. It is intended for trusted VMs: HTTP carries tokens and task data without
+TLS. It does not enable the SDK's process-wide insecure-issuer setting. Some MCP
+clients reject HTTP non-loopback OAuth URLs; this option cannot override their
+security policy. Use a separately designed HTTPS deployment for those clients.
+
+The two access URLs have separate resource-bound grants. Each hostname serves
+its own resource and authorization-server metadata, registration, token and
+revocation endpoints. VM discovery advertises
+`http://localhost:3789/authorize/vm` **for the Mac browser to open**, while the VM
+process exchanges codes and refreshes tokens at `host.lima.internal`. Success
+and error callbacks identify the VM issuer. VM-hostname requests cannot serve
+browser authorization, consent, logout or Google callback routes. Unconfigured
+Host headers remain rejected; forwarded headers cannot select a profile.
+
+Existing localhost registrations and grants remain valid; no storage migration is
+needed. Connect and approve the VM client once to obtain a grant for the VM
+resource. A localhost token cannot be reused at the VM URL, or vice versa.
+Owner approval and permission checks remain required for each resource.
+Disabling VM access makes its grants unusable while disabled; revoke the client
+if those grants should be permanently retired.
+
+**The MCP client's callback is separate from Google's callback.** If the client
+listens on a VM loopback port, forward that callback port from Mac loopback to VM
+loopback before completing authorization in the Mac browser. Use Lima's configured
+host-to-guest port forwarding or an SSH local forward, scoped to `127.0.0.1` on
+the Mac. The callback URI must still match the client's registered redirect; do
+not replace it with an unregistered hostname. The server cannot create this
+forward or infer the client's callback port.
+
+After restarting the Mac service, inspect discovery from inside the VM:
+
+```bash
+curl -i http://host.lima.internal:3789/mcp/
+curl -fsS http://host.lima.internal:3789/.well-known/oauth-protected-resource/mcp
+curl -fsS http://host.lima.internal:3789/.well-known/oauth-authorization-server
+```
+
+The first request should return 401 and advertise resource metadata at
+`host.lima.internal`. Metadata should identify resource
+`http://host.lima.internal:3789/mcp`, issuer `http://host.lima.internal:3789/`,
+Mac browser authorization at `/authorize/vm`, and VM-reachable client endpoints.
+Repeat on the Mac with `localhost`: that profile advertises localhost throughout.
+Then authorize each actual client, initialize MCP, call the read-only
+`list_task_lists` tool, and refresh from the VM. These real-client checks are
+separate from the automated fixtures; see
+[VM verification evidence](specs/epic-vm-access/evidence/verification.md).
+
 ### Connect a hosted service
 
 Desktop **custom remote connectors** connect from Anthropic's cloud, including when
@@ -126,8 +193,8 @@ retain the localhost setup callback for trusted owner enrollment. In Claude's
 connector settings choose **Register automatically**. Published client metadata
 identity is not implemented. See [Claude's network requirements](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
 
-Never advertise an insecure remote HTTP issuer or change the default bind merely
-to make a VM connection work. HTTPS can terminate at a trusted reverse proxy;
+Hosted deployments require HTTPS; the local Lima HTTP exception above is opt-in.
+Keep the default bind for local VM access. HTTPS can terminate at a trusted reverse proxy;
 forward the canonical Host and `X-Forwarded-Proto: https`, set explicit trusted
 proxy IPs/subnets in `TRUST_PROXY`, and do not put
 OAuth query strings or credentials into proxy access logs. No hosted deployment
@@ -136,8 +203,9 @@ or real harness path has been certified by the offline tests.
 ## Run in the background (autostart)
 
 To keep the server running across reboots and logins, register it with your OS
-service manager. Run the server on the **same machine as your MCP client** so it's
-reachable at `localhost` — for most people that's their desktop, not a remote box.
+service manager. For local host and Lima clients, run the server on the **Mac
+host**: host clients use `localhost`, while opted-in VM clients use
+`host.lima.internal`.
 
 ### macOS (launchd)
 
@@ -346,6 +414,7 @@ permissions. Keep the corrupt primary for diagnosis without sharing its secrets.
 | PORT                                    | 3789                                         | HTTP listener port                                                    |
 | HOST                                    | 127.0.0.1                                    | Listener interface; local mode requires loopback                      |
 | BASE_URL                                | http://localhost:$PORT                       | Canonical origin for issuer, MCP resource and runtime Google callback |
+| VM_ACCESS_ORIGIN                        | Disabled                                     | Opt-in local HTTP Lima origin at PORT; separate resource-bound VM grants |
 | DEPLOYMENT_MODE                         | local                                        | hosted requires HTTPS BASE_URL and TRUST_PROXY                        |
 | DATA_DIR                                | ~/.g-tasks-mcp                               | Private state and writer lock                                         |
 | OWNER_GOOGLE_SUB                        | Stored by setup                              | Optional independently verified owner override; conflicts fail        |

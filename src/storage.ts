@@ -616,13 +616,14 @@ export class Storage {
         }
       : undefined;
   }
-  revokeToken(value: string, clientId: string): void {
+  revokeToken(value: string, clientId: string, resource?: string): void {
     this.update((s) => {
       const h = hashToken(value),
         r = s.refresh[h],
         a = s.access[h],
         id = r?.grantId ?? a?.grantId;
       if (!id || s.grants[id]?.clientId !== clientId) return;
+      if (resource !== undefined && s.grants[id].resource !== resource) return;
       if (r) s.grants[id].active = false;
       else delete s.access[h];
     });
