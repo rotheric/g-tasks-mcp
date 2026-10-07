@@ -37,6 +37,8 @@ async function fixture(
     GOOGLE_CLIENT_SECRET: "fake",
     PORT: "3789",
     DATA_DIR: dir,
+    // Auth smoke tests stub Google task calls; search.test.ts covers search dependencies.
+    SEARCH_ENABLED: "false",
     ...extraConfig,
   });
   if (seed)

@@ -1,0 +1,69 @@
+{
+  "epic": "semantic-search",
+  "concepts": [
+    {
+      "id": "index-fencing",
+      "name": "Serialized operations and invocation account fence",
+      "owning_module": "search",
+      "type": "invariant"
+    },
+    {
+      "id": "fingerprints",
+      "name": "Canonical embedding and metadata fingerprints",
+      "owning_module": "search",
+      "type": "invariant"
+    },
+    {
+      "id": "mutation-hook",
+      "name": "All mutations delegate to durable search mutation wrapper",
+      "owning_module": "tools",
+      "type": "invariant"
+    },
+    {
+      "id": "lifecycle",
+      "name": "One service and scheduled reconciliation",
+      "owning_module": "runtime",
+      "type": "invariant"
+    },
+    {
+      "id": "google-auth-failure",
+      "name": "Shared Google error classification and guarded invalidation",
+      "owning_module": "google",
+      "type": "public_contract",
+      "added_by_story": "S3"
+    }
+  ],
+  "stories": [
+    {
+      "story_id": "S1",
+      "surfaces_touched": [
+        "src/search/text.ts",
+        "src/search/ports.ts",
+        "src/search/manifest.ts",
+        "src/search/service.ts",
+        "src/config.ts"
+      ]
+    },
+    {
+      "story_id": "S2",
+      "surfaces_touched": [
+        "src/tools.ts",
+        "src/index.ts",
+        ".env.example",
+        "README.md"
+      ]
+    },
+    {
+      "story_id": "S3",
+      "surfaces_touched": [
+        "test/search.test.ts",
+        "src/google.ts"
+      ]
+    }
+  ],
+  "reviewer_state": {
+    "last_story_reviewed": "S3",
+    "model_at": "2026-10-07T07:21:05.072938+00:00",
+    "cross_story_model_snapshot": "Continuing sol structural recheck clean after canonical hash and per-candidate passage remediation; single shared service owns reconciliation/fencing/durability."
+  }
+}

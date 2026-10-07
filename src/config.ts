@@ -6,7 +6,18 @@ import path from "node:path";
 dotenv.config();
 export const GOOGLE_TASKS_SCOPE = "https://www.googleapis.com/auth/tasks";
 export const MCP_SCOPE = "tasks";
+export interface SearchConfiguration {
+  enabled: boolean;
+  qdrantUrl: string;
+  qdrantApiKey: string;
+  collectionPrefix: string;
+  embeddingUrl: string;
+  embeddingModel: string;
+  embeddingQueryPrefix: string;
+  embeddingDocumentPrefix: string;
+}
 export interface Configuration {
+  search?: SearchConfiguration;
   port: number;
   host: string;
   baseUrl: string;
@@ -27,6 +38,18 @@ export function loadConfig(
   if (mode !== "local" && mode !== "hosted")
     throw new Error("DEPLOYMENT_MODE must be local or hosted");
   return {
+    search: {
+      enabled: (env.SEARCH_ENABLED ?? "true") === "true",
+      qdrantUrl: (env.QDRANT_URL ?? "http://localhost:6333").replace(/\/$/, ""),
+      qdrantApiKey: env.QDRANT_API_KEY ?? "",
+      collectionPrefix: env.QDRANT_COLLECTION_PREFIX ?? "g_tasks",
+      embeddingUrl: (env.EMBEDDING_URL ?? "http://localhost:11434").replace(/\/$/, ""),
+      embeddingModel: env.EMBEDDING_MODEL ?? "embeddinggemma",
+      embeddingQueryPrefix: env.EMBEDDING_QUERY_PREFIX ??
+        ((env.EMBEDDING_MODEL ?? "embeddinggemma").startsWith("embeddinggemma") ? "task: search result | query: " : ""),
+      embeddingDocumentPrefix: env.EMBEDDING_DOCUMENT_PREFIX ??
+        ((env.EMBEDDING_MODEL ?? "embeddinggemma").startsWith("embeddinggemma") ? "title: none | text: " : ""),
+    },
     port,
     mode,
     host: env.HOST ?? "127.0.0.1",
@@ -48,6 +71,15 @@ export const issuerFor = (c: Configuration): string => new URL(c.baseUrl).href;
 export const resourceFor = (c: Configuration): string =>
   new URL("/mcp", c.baseUrl).href;
 export function assertConfig(c: Configuration = config): void {
+  if (c.search?.enabled) {
+    for (const value of [c.search.qdrantUrl, c.search.embeddingUrl]) {
+      const endpoint = new URL(value);
+      if (!["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.search || endpoint.hash || endpoint.pathname !== "/")
+        throw new Error("Search endpoints must be HTTP(S) origins without credentials");
+    }
+    if (!/^[a-zA-Z0-9_-]{1,48}$/.test(c.search.collectionPrefix) || !c.search.embeddingModel.trim())
+      throw new Error("Invalid search collection prefix or embedding model");
+  }
   if (!c.googleClientId || !c.googleClientSecret)
     throw new Error("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required");
   if (!Number.isInteger(c.port) || c.port < 1 || c.port > 65535)

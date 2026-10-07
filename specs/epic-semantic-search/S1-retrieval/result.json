@@ -1,0 +1,87 @@
+{
+  "story_id": "S1",
+  "status": "done",
+  "remediation_rounds": 2,
+  "modules_touched": [
+    "search"
+  ],
+  "retrospective": {
+    "skipped": true,
+    "reason": "routine"
+  },
+  "verification_rounds": [
+    {
+      "round": 1,
+      "questions": [
+        {
+          "question_id": "VQ-S1-001",
+          "verdict": "YES",
+          "confidence": 0.9,
+          "evidence": "text.ts chunks/fingerprints; metadata, shrinking and changed-model tests",
+          "gaps": [],
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-002",
+          "verdict": "YES",
+          "confidence": 0.98,
+          "evidence": "service.ts search/refetch/failure; initial/dirty incomplete errors and candidate repair tests",
+          "gaps": [],
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-003",
+          "verdict": "YES",
+          "confidence": 0.94,
+          "evidence": "ports.ts bounded requests; durable retries and sanitized errors",
+          "gaps": [],
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-004",
+          "verdict": "YES",
+          "confidence": 0.97,
+          "evidence": "manifest/service/ports one-owner boundaries",
+          "gaps": [],
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-005",
+          "verdict": "YES",
+          "confidence": 0.92,
+          "evidence": "partial upsert replay, cleanup failure and adapter contract tests",
+          "gaps": [],
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-006",
+          "verdict": "YES",
+          "confidence": 0.96,
+          "evidence": "identity queue fences and reconnect test",
+          "gaps": [],
+          "root_cause_category": "none"
+        },
+        {
+          "question_id": "VQ-S1-007",
+          "verdict": "YES",
+          "confidence": 0.94,
+          "evidence": "config/.env/README documented local default and limits",
+          "gaps": [],
+          "root_cause_category": "none"
+        }
+      ],
+      "review": "Independent Astra examiner YES; 23/23 focused tests. Structural recheck clean. Google auth propagation, guarded background invalidation, model prefixes and cosine-ranking tests reverified."
+    }
+  ],
+  "final_outcome": "accepted",
+  "completed_at": "2026-10-07T07:21:05.072938+00:00",
+  "files_created": [
+    "src/search/text.ts",
+    "src/search/ports.ts",
+    "src/search/manifest.ts",
+    "src/search/service.ts"
+  ],
+  "files_modified": [
+    "src/config.ts"
+  ]
+}

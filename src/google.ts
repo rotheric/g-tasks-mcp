@@ -37,3 +37,17 @@ export function getAuthorizedGoogleClient(
 export function resetGoogleClient(store: Storage = storage): void {
   clients.delete(store);
 }
+
+export function isGoogleAuthError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  const status = (err as { response?: { status?: number } })?.response?.status;
+  return status === 401 || /invalid_grant|invalid_credentials|No Google account connected/i.test(message);
+}
+
+export function invalidateGoogleAuthorization(
+  store: Storage,
+  expected: { generation: number; revision: number },
+): void {
+  store.clearGoogleTokens(expected);
+  resetGoogleClient(store);
+}

@@ -1,0 +1,8 @@
+{
+  "captured_at": "2026-10-07T07:06:35.066238+00:00",
+  "commands": {
+    "npm test": "EPERM IPC",
+    "node --import tsx --test test/*.test.ts": "2 file passes; 2 network-bound failures",
+    "npm run typecheck": "pass"
+  }
+}

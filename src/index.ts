@@ -3,6 +3,7 @@ import { assertConfig, config } from "./config.js";
 import { createApp } from "./app.js";
 import { storage } from "./storage.js";
 import { command } from "./setup.js";
+import { searchFor } from "./search/service.js";
 
 async function main(): Promise<void> {
   if (process.argv.length > 2) {
@@ -17,19 +18,23 @@ async function main(): Promise<void> {
       throw new Error(
         "Owner setup required: stop the service and run g-tasks-mcp setup",
       );
+    const search = searchFor(storage, config);
     const app = createApp();
-    const server = app.listen(config.port, config.host, () =>
+    const server = app.listen(config.port, config.host, () => {
+      search?.start();
       console.log(
         `Google Tasks MCP: ${config.baseUrl}/mcp (bind ${config.host})`,
-      ),
-    );
+      );
+    });
     server.once("error", () => {
-      storage.release();
+      void (search?.stop() ?? Promise.resolve()).finally(() => storage.release());
       console.error("Could not bind HTTP listener");
       process.exitCode = 1;
     });
     const shutdown = () => {
-      server.close(() => storage.release());
+      server.close(() => {
+        void (search?.stop() ?? Promise.resolve()).finally(() => storage.release());
+      });
       server.closeAllConnections();
     };
     process.once("SIGINT", shutdown);

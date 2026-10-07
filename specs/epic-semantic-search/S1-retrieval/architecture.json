@@ -1,0 +1,33 @@
+{
+  "module_name": "search",
+  "purpose": "retrieval",
+  "public_api": [
+    "SearchService.search",
+    "SearchService.mutate",
+    "SearchService.sync"
+  ],
+  "private_files": [
+    "src/search/"
+  ],
+  "owned_data": [
+    "search manifest"
+  ],
+  "dependencies_allowed": [
+    "Storage",
+    "Google Tasks",
+    "fetch"
+  ],
+  "dependencies_forbidden": [
+    "auth mutation"
+  ],
+  "external_ports": [
+    "Google",
+    "Qdrant",
+    "Ollama"
+  ],
+  "events_emitted": [],
+  "events_consumed": [],
+  "test_targets": [
+    "test/search.test.ts"
+  ]
+}

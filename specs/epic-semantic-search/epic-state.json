@@ -1,0 +1,115 @@
+{
+  "epic_name": "semantic-search",
+  "status": "done",
+  "phase": "COMPLETE",
+  "created_at": "2026-10-07T07:06:35.066238+00:00",
+  "updated_at": "2026-10-07T07:29:52.136200+00:00",
+  "pre_existing_dirty_files": [
+    ".mcp.json"
+  ],
+  "completed_stories": [
+    "S1",
+    "S2",
+    "S3"
+  ],
+  "escalated_stories": [],
+  "phase_history": [
+    {
+      "phase": "SPEC_VALIDATED",
+      "timestamp": "2026-10-07T07:06:35.066238+00:00",
+      "trigger": "plan drafted; adversary in progress"
+    },
+    {
+      "phase": "PLANNING",
+      "timestamp": "2026-10-07T07:15:09.087813+00:00",
+      "trigger": "Astra plan review corrected"
+    },
+    {
+      "phase": "IN_PROGRESS",
+      "timestamp": "2026-10-07T07:15:09.087813+00:00",
+      "trigger": "implementation authorized"
+    },
+    {
+      "phase": "COMPLETE",
+      "timestamp": "2026-10-07T07:21:05.072938+00:00",
+      "trigger": "stories verified; final adversarial delivery gate pending"
+    }
+  ],
+  "consumer_sha": "a406bc64c9fc8f154e079e4501846e887535ed53",
+  "plugin_sha": "unknown",
+  "models": {
+    "lead": "unknown",
+    "implementer": "unknown",
+    "examiner": "gpt-6-astra"
+  },
+  "ownership_ledger_path": "ownership-ledger.json",
+  "gate_runs": [
+    {
+      "gate_id": "spec_adversary_review",
+      "outcome": "fired_remediated",
+      "detail": "Astra found no user blocker; whole-operation serialization, invocation account fences, durable orphan replay and bounded task-level ranking incorporated."
+    },
+    {
+      "gate_id": "mutation",
+      "outcome": "skipped",
+      "detail": "Spec opt-out: no mutation framework; behavioral recovery matrices used",
+      "skip_reason": "Spec opt-out: no mutation framework; behavioral recovery matrices used"
+    },
+    {
+      "gate_id": "e2e",
+      "outcome": "fired_pass",
+      "detail": "23/23 focused tests; actual in-memory MCP SDK smoke, auth/recovery/ranking/adapter matrices. Live host/socket checks unavailable under sandbox, baseline EPERM."
+    },
+    {
+      "gate_id": "pre_commit_review",
+      "outcome": "fired_remediated",
+      "detail": "Continuing structural review clean; fresh Astra result review clean after auth and ownership corrections; 23 tests and typecheck/build pass. Reviewed uncommitted patch; .git staging denied read-only filesystem."
+    }
+  ],
+  "completed_at": "2026-10-07T07:21:05.072938+00:00",
+  "manual_validation": [],
+  "ac_closure": [
+    {
+      "ac_id": "AC-SEARCH-1",
+      "status": "met",
+      "closure_basis": "evidence",
+      "evidence": "test/search.test.ts: focused behavioral matrix and actual SDK in-memory smoke; independent Astra examiner YES"
+    },
+    {
+      "ac_id": "AC-SEARCH-2",
+      "status": "met",
+      "closure_basis": "evidence",
+      "evidence": "test/search.test.ts: focused behavioral matrix and actual SDK in-memory smoke; independent Astra examiner YES"
+    },
+    {
+      "ac_id": "AC-SEARCH-3",
+      "status": "met",
+      "closure_basis": "evidence",
+      "evidence": "test/search.test.ts: focused behavioral matrix and actual SDK in-memory smoke; independent Astra examiner YES"
+    },
+    {
+      "ac_id": "AC-SEARCH-4",
+      "status": "met",
+      "closure_basis": "evidence",
+      "evidence": "test/search.test.ts: focused behavioral matrix and actual SDK in-memory smoke; independent Astra examiner YES"
+    },
+    {
+      "ac_id": "AC-SEARCH-5",
+      "status": "met",
+      "closure_basis": "evidence",
+      "evidence": "test/search.test.ts: focused behavioral matrix and actual SDK in-memory smoke; independent Astra examiner YES"
+    },
+    {
+      "ac_id": "AC-SEARCH-6",
+      "status": "met",
+      "closure_basis": "evidence",
+      "evidence": "test/search.test.ts: focused behavioral matrix and actual SDK in-memory smoke; independent Astra examiner YES"
+    },
+    {
+      "ac_id": "AC-SEARCH-7",
+      "status": "met",
+      "closure_basis": "evidence",
+      "evidence": "test/search.test.ts: focused behavioral matrix and actual SDK in-memory smoke; independent Astra examiner YES"
+    }
+  ]
+}

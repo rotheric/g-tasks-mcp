@@ -1,0 +1,65 @@
+{
+  "story_id": "S3",
+  "authored_by": "story-planner",
+  "authored_at": "2026-10-07T07:06:35.066238+00:00",
+  "questions": [
+    {
+      "question_id": "VQ-S3-001",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-SEARCH-1",
+      "question": "Does observable code/test evidence satisfy AC-SEARCH-1, including stated failure paths?"
+    },
+    {
+      "question_id": "VQ-S3-002",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-SEARCH-3",
+      "question": "Does observable code/test evidence satisfy AC-SEARCH-3, including stated failure paths?"
+    },
+    {
+      "question_id": "VQ-S3-003",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-SEARCH-4",
+      "question": "Does observable code/test evidence satisfy AC-SEARCH-4, including stated failure paths?"
+    },
+    {
+      "question_id": "VQ-S3-004",
+      "phase": "pre-impl",
+      "category": "SPEC",
+      "ac_id": "AC-SEARCH-6",
+      "question": "Does observable code/test evidence satisfy AC-SEARCH-6, including stated failure paths?"
+    },
+    {
+      "question_id": "VQ-S3-005",
+      "phase": "pre-impl",
+      "category": "QUALITY",
+      "question": "Are errors bounded, retryable and truthful without task/secret logging?"
+    },
+    {
+      "question_id": "VQ-S3-006",
+      "phase": "pre-impl",
+      "category": "ARCHITECTURE",
+      "question": "Does each invariant have one owner and production assembly use the shared service?"
+    },
+    {
+      "question_id": "VQ-S3-007",
+      "phase": "pre-impl",
+      "category": "TEST",
+      "question": "Do tests discriminate real external-port behavior and operation order/recovery?"
+    },
+    {
+      "question_id": "VQ-S3-008",
+      "phase": "pre-impl",
+      "category": "SECURITY",
+      "question": "Are stale-account asynchronous operations fenced before persistence and return?"
+    },
+    {
+      "question_id": "VQ-S3-009",
+      "phase": "pre-impl",
+      "category": "BEST_PRACTICES",
+      "question": "Is scope minimal and configuration/documentation consistent with runtime?"
+    }
+  ]
+}

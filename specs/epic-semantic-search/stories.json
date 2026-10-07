@@ -1,0 +1,83 @@
+{
+  "epic_name": "semantic-search",
+  "created_at": "2026-10-07T07:06:35.066238+00:00",
+  "total_stories": 3,
+  "stories": [
+    {
+      "id": "S1",
+      "name": "retrieval",
+      "title": "retrieval",
+      "description": "Implement and verify retrieval",
+      "acceptance_criteria": [
+        "AC-SEARCH-2",
+        "AC-SEARCH-5"
+      ],
+      "complexity": "high",
+      "status": "done",
+      "owning_module": "search"
+    },
+    {
+      "id": "S2",
+      "name": "mcp-integration",
+      "title": "mcp-integration",
+      "description": "Implement and verify mcp-integration",
+      "acceptance_criteria": [
+        "AC-SEARCH-7"
+      ],
+      "complexity": "high",
+      "status": "done",
+      "owning_module": "tools"
+    },
+    {
+      "id": "S3",
+      "name": "integration-verification",
+      "title": "integration-verification",
+      "description": "Implement and verify integration-verification",
+      "acceptance_criteria": [
+        "AC-SEARCH-1",
+        "AC-SEARCH-3",
+        "AC-SEARCH-4",
+        "AC-SEARCH-6"
+      ],
+      "complexity": "high",
+      "status": "done",
+      "is_integration_story": true
+    }
+  ],
+  "story_order": [
+    "S1",
+    "S2",
+    "S3"
+  ],
+  "cross_cutting_acs": [
+    {
+      "ac_id": "AC-SEARCH-1",
+      "spanned_by": [
+        "S1",
+        "S2"
+      ]
+    },
+    {
+      "ac_id": "AC-SEARCH-3",
+      "spanned_by": [
+        "S1",
+        "S2"
+      ]
+    },
+    {
+      "ac_id": "AC-SEARCH-4",
+      "spanned_by": [
+        "S1",
+        "S2"
+      ]
+    },
+    {
+      "ac_id": "AC-SEARCH-6",
+      "spanned_by": [
+        "S1",
+        "S2"
+      ]
+    }
+  ],
+  "updated_at": "2026-10-07T07:21:05.072938+00:00"
+}

@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help build test run install restart status logs clean
+.PHONY: help build test run embeddings embeddings-offline install restart status logs clean
 
 LAUNCHD_LABEL := com.rotheric.g-tasks-mcp
 
@@ -8,6 +8,8 @@ help:
 	@echo "  build    Build the server (repair dependencies if needed)"
 	@echo "  test     Run the test suite (repair dependencies if needed)"
 	@echo "  run      Build and run in the foreground"
+	@echo "  embeddings  Synchronize embeddings via the running MCP server (REBUILD=1 to regenerate)"
+	@echo "  embeddings-offline  Synchronize directly with the server stopped (recovery)"
 	@echo "  install  Build, install/update and start the macOS LaunchAgent"
 	@echo "  restart  Build and restart the installed macOS service"
 	@echo "  status   Show the macOS service state and last exit status"
@@ -22,6 +24,12 @@ test:
 
 run: build
 	npm start
+
+embeddings: build
+	node dist/index.js embeddings $(if $(filter 1,$(REBUILD)),--rebuild,)
+
+embeddings-offline: build
+	node dist/index.js embeddings-offline $(if $(filter 1,$(REBUILD)),--rebuild,)
 
 install:
 	node scripts/install-launchd.cjs --check-platform

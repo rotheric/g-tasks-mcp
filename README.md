@@ -19,6 +19,9 @@ The MCP server binds to loopback by default. Hosted HTTPS operation is configura
 | `create_task_list`      | Create a new task list                                            |
 | `delete_task_list`      | Delete a task list and everything in it                           |
 | `list_tasks`            | List tasks (optionally including completed, filtered by due date) |
+| `search_tasks`          | Search titles and notes by meaning and keywords across lists      |
+| `sync_search_index`     | Reconcile all tasks, reusing unchanged embeddings                  |
+| `rebuild_search_index`  | Rebuild the optional derived search index                          |
 | `get_task`              | Look up a single task                                             |
 | `create_task`           | Add a task — title, notes, due date, optional parent for subtasks |
 | `update_task`           | Change a task's title, notes, due date, or status                 |
@@ -187,6 +190,104 @@ Manage it:
 | `journalctl --user -u g-tasks-mcp -p err` | Errors only                    |
 
 Logs go to the systemd journal — persisted and rotated automatically, no log files to manage. The service restarts on failure (`Restart=on-failure`). After a `make build`, run `systemctl --user restart g-tasks-mcp` to pick up the new code.
+
+## Semantic task search
+
+Search is enabled by default. It reuses an existing Qdrant and generates embeddings
+through local Ollama. Install the default model (`ollama pull embeddinggemma`).
+The following defaults can be overridden in `.env`:
+
+```dotenv
+QDRANT_URL=http://localhost:6333
+EMBEDDING_URL=http://localhost:11434
+EMBEDDING_MODEL=embeddinggemma
+```
+
+Set `SEARCH_ENABLED=false` only if you explicitly want to disable search.
+
+Create or refresh embeddings from your Mac while the server keeps running:
+
+```bash
+make embeddings
+make embeddings REBUILD=1 # regenerate in a fresh collection
+```
+
+The command is an authenticated MCP client. On first use, open the printed browser
+URL and approve it through the normal authorization flow. Subsequent runs reuse its
+private credentials in `DATA_DIR/mcp-cli`. It does not acquire the server's data lock.
+Restart an existing installation once after upgrading to load `sync_search_index`.
+The command reports the number of tasks newly embedded, reused, and indexed in total
+(counting tasks, not text chunks). The normal command reconciles all tasks and reuses embeddings for unchanged text;
+`REBUILD=1` calls `rebuild_search_index`. Both share the running server's queue with
+mutations and its daily reconciliation.
+
+For recovery with the server stopped, `make embeddings-offline` provides the original
+exclusive writer command (`REBUILD=1` also works). This offline command requires the
+server's data lock.
+
+The service normally runs on your macOS host, where `localhost` refers to host
+services. A service running inside Lima can use `http://host.lima.internal:6333`
+and `http://host.lima.internal:11434` when those host services accept VM connections.
+`QDRANT_API_KEY` is optional. `QDRANT_COLLECTION_PREFIX` defaults to `g_tasks`.
+Qdrant must support the universal query endpoint (version 1.10 or newer).
+No Qdrant process is started or unrelated collection modified.
+
+Call `search_tasks` with a natural-language `query`; optional `tasklistIds` restrict
+it to explicit list IDs. Search defaults to all lists, pending tasks, and 10 results.
+`includeCompleted`, `dueMin` (inclusive), `dueMax` (exclusive), and `limit` (1–50)
+are supported. Due bounds are RFC 3339 timestamps; Google Tasks stores date-only due
+values. Results contain current Google task fields, list IDs, a matching passage,
+a relevance score, and index freshness/candidate-limit information. Scores are
+reciprocal-rank fusion values, not probabilities. Retrieval supplies context to the
+client; the server does not generate answers or hypothetical questions.
+
+The index embeds titles and notes directly, splitting long notes into bounded
+paragraph-aware chunks. Semantic chunk matches are grouped by task and combined
+with lexical matches over complete titles/notes. The server refetches a bounded
+set of candidates from Google, reapplies filters, and repairs changed/deleted entries.
+Changed candidates can retain an earlier relevance rank, which the response reports.
+Candidate and verification caps can reduce recall; those limits are also reported.
+Oversized embedding inputs cause an explicit error rather than silent truncation;
+choose a model with adequate context for approximately 2,850 Unicode characters
+per chunk. The model must remain stable under its configured identifier. EmbeddingGemma uses
+its [document/query retrieval prefixes](https://ai.google.dev/gemma/docs/embeddinggemma/model_card#prompt-instructions)
+automatically; the document prefix uses `title: none` with the actual task title
+included in the chunk text. Other models default to raw text. Set
+`EMBEDDING_QUERY_PREFIX` and `EMBEDDING_DOCUMENT_PREFIX` when a different model needs
+instructions; changing prefixes triggers reindexing. Query formatting is deterministic,
+without generated questions or content.
+
+All writes are assumed to pass through this MCP. Writes mark durable recovery state
+before contacting Google and update the index after success. If Qdrant or embeddings
+fail, the Google write still succeeds and reconciliation remains pending. Server
+startup and a minute-level scheduler reconcile pending work; an otherwise healthy
+index receives a full reconciliation once daily. Searches also reconcile an
+incomplete, dirty, missing, or overdue index before retrieving. Full reconciliation
+fetches every list/task page, including completed and hidden tasks. Cleared completed
+tasks remain searchable with `includeCompleted=true` because Google retains them
+in history. Failed fetches never prune unseen tasks or advance sync freshness.
+
+`DATA_DIR/search-index.json` is an atomic private manifest (0600), containing a
+rebuildable copy of task content and recovery metadata separate from OAuth state.
+Dedicated Qdrant collections are scoped to installation, account/disconnect generation,
+model configuration and rebuild epoch. `rebuild_search_index` creates a new collection
+and reindexes Google Tasks; old collections are retained for operator cleanup.
+Model/endpoint changes trigger a separate collection and full reindex. Disconnect
+fences pending operations and old data is never returned through the MCP. Rebuilding
+does not delete Google tasks. For a corrupt manifest, stop the service, remove only
+`search-index.json`, then restart to rebuild. Never remove authentication state as
+part of search recovery.
+
+Ordinary task tools work with search disabled and preserve Google success during
+search dependency outages. Search failures are returned as errors, not “no matches.” Search/rebuild errors
+include index completeness, pending reconciliation, and last successful sync when
+the account remains current.
+With search enabled, an unsafe/unwritable recovery manifest prevents mutations until
+private storage is repaired, so a successful write cannot silently lose recovery state.
+Task content goes to the configured embedding endpoint; keep it local if desired.
+No deployment against live host Google/Qdrant/Ollama services is certified by the
+sandbox tests. Offline port and production-tool tests cover retrieval, update/restart
+recovery, pagination, filtering, chunk cleanup, and account fencing.
 
 ## Authentication and storage
 

@@ -1,0 +1,18 @@
+{
+  "locations": [
+    "src/tools.ts: Google task API calls",
+    "src/app.ts: per-request MCP instances",
+    "src/index.ts: process lifecycle",
+    "src/storage.ts: account generation and private locked data dir"
+  ],
+  "constraints": [
+    "Host runtime is macOS; VM hostname differs",
+    "Storage revision changes on token refresh; generation is disconnect fence",
+    "No dependency additions needed"
+  ],
+  "baseline": {
+    "npm test": "EPERM tsx IPC socket",
+    "node --import tsx --test test/*.test.ts": "identity/storage passed; setup/smoke fail under network sandbox",
+    "npm run typecheck": "passed"
+  }
+}

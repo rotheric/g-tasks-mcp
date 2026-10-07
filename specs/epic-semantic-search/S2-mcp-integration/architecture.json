@@ -1,0 +1,34 @@
+{
+  "module_name": "tools",
+  "purpose": "Register MCP search tools and mutation hooks; consume SearchService lifecycle through runtime composition",
+  "public_api": [
+    "registerTools",
+    "ToolDependencies"
+  ],
+  "private_files": [
+    "src/tools.ts"
+  ],
+  "owned_data": [
+    "MCP tool schemas and routing"
+  ],
+  "dependencies_allowed": [
+    "SearchService public API",
+    "Google Tasks API",
+    "Google auth public contract",
+    "Storage snapshot",
+    "Configuration"
+  ],
+  "dependencies_forbidden": [
+    "search manifest internals",
+    "direct Qdrant/Ollama calls"
+  ],
+  "external_ports": [
+    "Google Tasks mutation API",
+    "SearchService"
+  ],
+  "events_emitted": [],
+  "events_consumed": [],
+  "test_targets": [
+    "test/search.test.ts"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "e2e": {
+    "tree": "670c3f2fa8d56d07b2ff8b1edef32abd08d52d53cff3939f26b9dbe029008e01",
+    "outcome": "fired_pass",
+    "detail": "23/23 focused tests; actual in-memory MCP SDK smoke, auth/recovery/ranking/adapter matrices. Live host/socket checks unavailable under sandbox, baseline EPERM."
+  },
+  "mutation": {
+    "tree": "f7e2ef84a97fbd7ec1cf30010a2f48e2dae4e1ca5170ba94589be5682c84f177",
+    "outcome": "skipped",
+    "detail": "Spec opt-out: no mutation framework; behavioral recovery matrices used"
+  },
+  "pre_commit_review": {
+    "tree": "dc2e317b38df353597554d7aea6a68fd2ed6a113ca2c8b91cd8f77c1573677d8",
+    "outcome": "fired_remediated",
+    "detail": "Continuing structural review clean; fresh Astra result review clean after auth and ownership corrections; 23 tests and typecheck/build pass. Reviewed uncommitted patch; .git staging denied read-only filesystem."
+  }
+}

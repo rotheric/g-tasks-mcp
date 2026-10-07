@@ -1,9 +1,16 @@
 import { z } from "zod";
 import { google, tasks_v1 } from "googleapis";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getAuthorizedGoogleClient, resetGoogleClient } from "./google.js";
+import { getAuthorizedGoogleClient, resetGoogleClient, isGoogleAuthError, invalidateGoogleAuthorization } from "./google.js";
 import { storage, Storage } from "./storage.js";
 import { config, type Configuration } from "./config.js";
+import { searchFor, type SearchService, type Change } from "./search/service.js";
+import { SearchError } from "./search/ports.js";
+
+export interface ToolDependencies {
+  search?: SearchService;
+  tasks?: () => tasks_v1.Tasks;
+}
 
 type ToolResult = {
   content: Array<{ type: "text"; text: string }>;
@@ -12,17 +19,6 @@ type ToolResult = {
 
 function ok(data: unknown): ToolResult {
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
-}
-
-function isGoogleAuthError(err: unknown): boolean {
-  const message = err instanceof Error ? err.message : String(err);
-  const status = (err as { response?: { status?: number } })?.response?.status;
-  return (
-    status === 401 ||
-    /invalid_grant|invalid_credentials|No Google account connected/i.test(
-      message,
-    )
-  );
 }
 
 function slimTaskList(list: tasks_v1.Schema$TaskList) {
@@ -54,10 +50,17 @@ export function registerTools(
   server: McpServer,
   store: Storage = storage,
   c: Configuration = config,
+  dependencies: ToolDependencies = {},
 ): void {
+  const search = dependencies.search ?? searchFor(store, c);
+  async function mutate<T>(operation: () => Promise<T>, change?: (result: T) => Change): Promise<T> {
+    return search ? search.mutate(operation, change) : operation();
+  }
   function tasksApi(): tasks_v1.Tasks {
+    if (dependencies.tasks) return dependencies.tasks();
     return google.tasks({
       version: "v1",
+      timeout: 30000,
       auth: getAuthorizedGoogleClient(store, c),
     });
   }
@@ -71,8 +74,8 @@ export function registerTools(
       return ok(await fn());
     } catch (err) {
       if (isGoogleAuthError(err)) {
-        if (expected) store.clearGoogleTokens(expected);
-        resetGoogleClient(store);
+        if (expected) invalidateGoogleAuthorization(store, expected);
+        else resetGoogleClient(store);
         return {
           content: [
             {
@@ -83,6 +86,10 @@ export function registerTools(
           isError: true,
         };
       }
+      if (err instanceof SearchError) return {
+        content: [{ type: "text", text: err.details
+          ? JSON.stringify({ error: err.message, ...err.details }) : err.message }], isError: true,
+      };
       return {
         content: [
           {
@@ -94,6 +101,51 @@ export function registerTools(
       };
     }
   }
+
+  server.registerTool(
+    "search_tasks",
+    {
+      title: "Search tasks",
+      description: "Search task titles and notes by meaning and keywords across all lists. Returns current matching tasks without fetching the whole inventory to the client. Search index must be enabled; results report index freshness and candidate limits.",
+      inputSchema: {
+        query: z.string().trim().min(1).max(4000),
+        tasklistIds: z.array(z.string().min(1)).min(1).max(100).optional()
+          .describe("Restrict to explicit task list IDs; omit to search all lists."),
+        includeCompleted: z.boolean().default(false),
+        dueMin: z.string().datetime({ offset: true }).optional(),
+        dueMax: z.string().datetime({ offset: true }).optional(),
+        limit: z.number().int().min(1).max(50).default(10),
+      },
+    },
+    async (input) => run(async () => {
+      if (!search) throw new SearchError("Task search is disabled. Configure SEARCH_ENABLED and the embedding/Qdrant endpoints.");
+      return search.search(input);
+    }),
+  );
+  server.registerTool(
+    "sync_search_index",
+    {
+      title: "Synchronize task search index",
+      description: "Reconcile all Google Tasks into the search index, reusing unchanged embeddings. Runs inside the server alongside normal task operations.",
+      inputSchema: {},
+    },
+    async () => run(async () => {
+      if (!search) throw new SearchError("Task search is disabled.");
+      return search.sync();
+    }),
+  );
+  server.registerTool(
+    "rebuild_search_index",
+    {
+      title: "Rebuild task search index",
+      description: "Rebuild the derived task search index from all Google Tasks. Does not change Google tasks or unrelated Qdrant collections. Requires enabled search.",
+      inputSchema: {},
+    },
+    async () => run(async () => {
+      if (!search) throw new SearchError("Task search is disabled.");
+      return search.sync(true);
+    }),
+  );
 
   server.registerTool(
     "list_task_lists",
@@ -118,9 +170,9 @@ export function registerTools(
     },
     async ({ title }) =>
       run(async () => {
-        const res = await tasksApi().tasklists.insert({
+        const res = await mutate(() => tasksApi().tasklists.insert({
           requestBody: { title },
-        });
+        }));
         return slimTaskList(res.data);
       }),
   );
@@ -137,7 +189,8 @@ export function registerTools(
     },
     async ({ tasklistId: id }) =>
       run(async () => {
-        await tasksApi().tasklists.delete({ tasklist: id });
+        await mutate(() => tasksApi().tasklists.delete({ tasklist: id }),
+          () => ({ listId: id, deletedList: true }));
         return { deleted: id };
       }),
   );
@@ -214,11 +267,11 @@ export function registerTools(
     },
     async ({ tasklistId: id, title, notes, due, parent }) =>
       run(async () => {
-        const res = await tasksApi().tasks.insert({
+        const res = await mutate(() => tasksApi().tasks.insert({
           tasklist: id,
           parent,
           requestBody: { title, notes, due },
-        });
+        }), (r) => ({ listId: id, task: r.data }));
         return slimTask(res.data);
       }),
   );
@@ -243,11 +296,11 @@ export function registerTools(
     },
     async ({ tasklistId: id, taskId, title, notes, due, status }) =>
       run(async () => {
-        const res = await tasksApi().tasks.patch({
+        const res = await mutate(() => tasksApi().tasks.patch({
           tasklist: id,
           task: taskId,
           requestBody: { title, notes, due, status },
-        });
+        }), (r) => ({ listId: id, task: r.data }));
         return slimTask(res.data);
       }),
   );
@@ -264,11 +317,11 @@ export function registerTools(
     },
     async ({ tasklistId: id, taskId }) =>
       run(async () => {
-        const res = await tasksApi().tasks.patch({
+        const res = await mutate(() => tasksApi().tasks.patch({
           tasklist: id,
           task: taskId,
           requestBody: { status: "completed" },
-        });
+        }), (r) => ({ listId: id, task: r.data }));
         return slimTask(res.data);
       }),
   );
@@ -285,7 +338,8 @@ export function registerTools(
     },
     async ({ tasklistId: id, taskId }) =>
       run(async () => {
-        await tasksApi().tasks.delete({ tasklist: id, task: taskId });
+        await mutate(() => tasksApi().tasks.delete({ tasklist: id, task: taskId }),
+          () => ({ listId: id, deletedId: taskId }));
         return { deleted: taskId };
       }),
   );
@@ -313,12 +367,12 @@ export function registerTools(
     },
     async ({ tasklistId: id, taskId, parent, previous }) =>
       run(async () => {
-        const res = await tasksApi().tasks.move({
+        const res = await mutate(() => tasksApi().tasks.move({
           tasklist: id,
           task: taskId,
           parent,
           previous,
-        });
+        }), (r) => ({ listId: id, task: r.data }));
         return slimTask(res.data);
       }),
   );
@@ -333,7 +387,7 @@ export function registerTools(
     },
     async ({ tasklistId: id }) =>
       run(async () => {
-        await tasksApi().tasks.clear({ tasklist: id });
+        await mutate(() => tasksApi().tasks.clear({ tasklist: id }));
         return { cleared: id };
       }),
   );

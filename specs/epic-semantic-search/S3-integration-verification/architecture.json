@@ -1,0 +1,27 @@
+{
+  "module_name": "integration",
+  "purpose": "Verify real search/tools/runtime/google composition and recovery invariants",
+  "public_api": [],
+  "private_files": [],
+  "owned_data": [],
+  "dependencies_allowed": [
+    "search",
+    "tools",
+    "runtime",
+    "google",
+    "MCP in-memory transport",
+    "isolated external-port fixtures"
+  ],
+  "dependencies_forbidden": [
+    "temporary production mocks",
+    "unscoped external writes"
+  ],
+  "external_ports": [
+    "injected Google/Qdrant/Ollama test ports"
+  ],
+  "events_emitted": [],
+  "events_consumed": [],
+  "test_targets": [
+    "test/search.test.ts"
+  ]
+}

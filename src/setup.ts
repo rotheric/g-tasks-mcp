@@ -5,9 +5,24 @@ import type { Server } from "node:http";
 import { assertConfig, config } from "./config.js";
 import { storage } from "./storage.js";
 import { googlePort } from "./auth/google-identity.js";
+import { searchFor } from "./search/service.js";
+import { embeddingsCommand, embeddingCountsMessage } from "./client/embeddings.js";
 
 export async function command(args: string[]): Promise<void> {
   const [name, action, id] = args;
+  if (name === "embeddings") {
+    if (args.length > 2 || (action !== undefined && action !== "--rebuild"))
+      throw new Error("Usage: embeddings [--rebuild]");
+    await embeddingsCommand(action === "--rebuild");
+    return;
+  }
+  if (name === "embeddings-offline") {
+    if (args.length > 2 || (action !== undefined && action !== "--rebuild"))
+      throw new Error("Usage: embeddings-offline [--rebuild]");
+    assertConfig();
+    if (!config.search?.enabled)
+      throw new Error("Set SEARCH_ENABLED=true and configure local Ollama/Qdrant before creating embeddings.");
+  }
   if (name === "lock-recover") {
     storage.recoverLock();
     console.log("Recovered absent writer lock.");
@@ -20,6 +35,17 @@ export async function command(args: string[]): Promise<void> {
       console.log(
         "Migrated to disconnected v2 state. Run setup, then start and reconnect clients.",
       );
+      return;
+    }
+    if (name === "embeddings-offline") {
+      const search = searchFor(storage, config)!;
+      try {
+        const result = await search.sync(action === "--rebuild");
+        console.log(embeddingCountsMessage(result));
+        console.log(`Task embeddings synchronized. Full sync: ${result.lastFullSync}`);
+      } finally {
+        await search.stop();
+      }
       return;
     }
     if (name === "clients") {
@@ -48,7 +74,7 @@ export async function command(args: string[]): Promise<void> {
     }
     if (name !== "setup")
       throw new Error(
-        "Commands: setup, migrate, clients, disconnect, lock-recover",
+        "Commands: setup, migrate, clients, disconnect, lock-recover, embeddings [--rebuild], embeddings-offline [--rebuild]",
       );
     assertConfig();
     if (config.ownerSub) {
