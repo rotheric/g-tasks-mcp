@@ -1,0 +1,18 @@
+# Replace tasks.example.com with a hostname under a domain you control.
+# Set BASE_URL=https://tasks.example.com:8443 and
+# VM_ACCESS_ORIGIN=https://host.lima.internal:8443 in the server environment.
+# For one shared HTTPS URL, remove the second address and omit VM_ACCESS_ORIGIN.
+{
+	# Only serve HTTPS; do not introduce a port-80 listener for this private setup.
+	auto_https disable_redirects
+}
+
+https://tasks.example.com:8443, https://host.lima.internal:8443 {
+	tls internal
+	reverse_proxy 127.0.0.1:3789 {
+		# Keep the original Host so the server selects the configured profile.
+		header_up X-Forwarded-Proto https
+		flush_interval -1
+	}
+	# Deliberately no access log: OAuth URLs can contain authorization codes.
+}

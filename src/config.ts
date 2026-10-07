@@ -144,16 +144,17 @@ export function assertConfig(c: Configuration = config): void {
     throw new Error("Local mode requires a loopback URL and HOST=127.0.0.1");
   if (c.vmAccessOrigin) {
     const vm = new URL(c.vmAccessOrigin);
-    if (
-      c.mode !== "local" ||
-      vm.protocol !== "http:" ||
-      vm.hostname !== "host.lima.internal" ||
-      Number(vm.port || "80") !== c.port ||
-      vm.origin !== c.vmAccessOrigin
-    )
+    const validOrigin = vm.origin === c.vmAccessOrigin;
+    const localHttp = c.mode === "local" && vm.protocol === "http:" &&
+      vm.hostname === "host.lima.internal" && Number(vm.port || "80") === c.port;
+    const hostedHttps = c.mode === "hosted" && vm.protocol === "https:";
+    if (!validOrigin || (!localHttp && !hostedHttps))
       throw new Error(
-        "VM_ACCESS_ORIGIN requires local mode and http://host.lima.internal:PORT without a path or credentials",
+        "VM_ACCESS_ORIGIN requires an HTTPS origin in hosted mode, or http://host.lima.internal:PORT in local mode",
       );
+    // Routing selects profiles by Host, so their authorities must be distinct.
+    if (vm.host === url.host)
+      throw new Error("VM_ACCESS_ORIGIN must use a different authority from BASE_URL; omit it for a shared URL");
   }
   const setup = new URL(c.setupUrl);
   if (

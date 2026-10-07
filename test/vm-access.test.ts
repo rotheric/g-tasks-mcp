@@ -19,9 +19,13 @@ const verifier = "A".repeat(43), challenge = createHash("sha256").update(verifie
 const redirect = "http://127.0.0.1:9999/callback";
 const baseConfig = { GOOGLE_CLIENT_ID: "fixture.apps.googleusercontent.com", GOOGLE_CLIENT_SECRET: "fake", SEARCH_ENABLED: "false" };
 
-async function fixture(enabled = true) {
+async function fixture(enabled = true, hosted = false, trustedProxy = "127.0.0.1") {
+  const local = hosted ? "https://tasks.example.com:8443" : "http://localhost:3789";
+  const vm = hosted ? "https://host.lima.internal:8443" : "http://host.lima.internal:3789";
   const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "gtasks-vm-")));
-  const c = loadConfig({ ...baseConfig, DATA_DIR: dir, ...(enabled ? { VM_ACCESS_ORIGIN: vm } : {}) });
+  const c = loadConfig({ ...baseConfig, DATA_DIR: dir,
+    ...(hosted ? { DEPLOYMENT_MODE: "hosted", BASE_URL: local, TRUST_PROXY: trustedProxy } : {}),
+    ...(enabled ? { VM_ACCESS_ORIGIN: vm } : {}) });
   const store = new Storage(dir);
   store.acquire();
   store.pinOwner("owner");
@@ -57,6 +61,7 @@ async function fixture(enabled = true) {
     const url = new URL(target, local), browser = url.origin === local;
     const headers = new Headers(init.headers);
     headers.set("host", headers.get("host") ?? url.host);
+    if (hosted && !headers.has("x-forwarded-proto")) headers.set("x-forwarded-proto", "https");
     if (browser && cookie) headers.set("cookie", cookie);
     const response = await new Promise<Response>((resolve, reject) => {
       const req = httpRequest({ hostname: "127.0.0.1", port, path: url.pathname + url.search,
@@ -149,7 +154,7 @@ async function fixture(enabled = true) {
     await client.connect(transport);
     return client;
   }
-  return { c, store, request, post, register, fields, begin, googleCallback, authorize, exchange, refresh, connect,
+  return { local, vm, c, store, request, post, register, fields, begin, googleCallback, authorize, exchange, refresh, connect,
     wrongOwner() { owner = "intruder"; },
     reload() { store.release(); store.acquire(); },
     async close() { server.closeAllConnections(); await new Promise<void>((r) => server.close(() => r()));
@@ -344,6 +349,79 @@ test("both authorization paths preserve strict redirects, fixed error issuer and
       await f.post(local + "/auth/logout", { session_csrf: f.fields(html).session_csrf });
       assert.equal((await f.googleCallback(await f.begin(origin, id))).status, 400);
       assert.equal(Object.keys(f.store.snapshot().grants).length, 0);
+    } finally { await f.close(); }
+  }
+});
+
+test("HTTPS VM origins require hosted TLS policy and distinct configured authorities", () => {
+  const hosted = { ...baseConfig, DEPLOYMENT_MODE: "hosted", BASE_URL: "https://tasks.example.com",
+    TRUST_PROXY: "127.0.0.1", VM_ACCESS_ORIGIN: "https://host.lima.internal:8443" };
+  assertConfig(loadConfig(hosted));
+  for (const VM_ACCESS_ORIGIN of [vm, "https://tasks.example.com", "https://host.lima.internal/path",
+    "https://user:secret@host.lima.internal", "https://host.lima.internal?x=1", "https://host.lima.internal#x"])
+    assert.throws(() => assertConfig(loadConfig({ ...hosted, VM_ACCESS_ORIGIN })));
+  assert.throws(() => assertConfig(loadConfig({ ...hosted, TRUST_PROXY: "" })));
+  assert.throws(() => assertConfig(loadConfig({ ...hosted, BASE_URL: local })));
+});
+
+test("HTTPS VM discovery, SDK token exchange, refresh and resource isolation behind a trusted proxy", async () => {
+  const { discoverOAuthServerInfo, exchangeAuthorization, refreshAuthorization } =
+    await import("@modelcontextprotocol/sdk/client/auth.js");
+  const f = await fixture(true, true);
+  try {
+    const fetchFn = ((url: string | URL, init?: RequestInit) => f.request(String(url), init)) as typeof fetch;
+    const resource = new URL(f.vm + "/mcp");
+    const challengeResponse = await f.request(resource);
+    assert.equal(challengeResponse.status, 401);
+    assert.ok(challengeResponse.headers.get("www-authenticate")!.includes(f.vm + "/.well-known/oauth-protected-resource/mcp"));
+    const info = await discoverOAuthServerInfo(resource, { fetchFn });
+    assert.equal(info.authorizationServerUrl, f.vm + "/");
+    assert.equal(info.resourceMetadata!.resource, resource.href);
+    const metadata = info.authorizationServerMetadata!;
+    assert.equal(metadata.authorization_endpoint, f.local + "/authorize/vm");
+    const advertised = await (await f.request(f.vm + "/.well-known/oauth-authorization-server")).json();
+    for (const name of ["issuer", "authorization_endpoint", "token_endpoint", "registration_endpoint", "revocation_endpoint"] as const)
+      assert.equal(new URL(advertised[name]).protocol, "https:");
+    const forged = await f.request(f.vm + "/.well-known/oauth-authorization-server", {
+      headers: { "x-forwarded-host": "evil.example" },
+    });
+    assert.equal((await forged.json()).issuer, f.vm + "/");
+    assert.equal((await f.request(f.vm + "/mcp", { headers: { host: "evil.example" } })).status, 421);
+    assert.equal((await f.request(f.vm + "/authorize/vm")).status, 421);
+    const clientInformation = await f.register(f.vm);
+    const tokens = await exchangeAuthorization(info.authorizationServerUrl, {
+      metadata, clientInformation, authorizationCode: await f.authorize(f.vm, clientInformation.client_id),
+      codeVerifier: verifier, redirectUri: redirect, resource, fetchFn,
+    });
+    const client = await f.connect(f.vm, tokens.access_token);
+    try { assert.ok((await client.listTools()).tools.length > 0); }
+    finally { await client.close(); }
+    f.reload();
+    const renewed = await refreshAuthorization(info.authorizationServerUrl, {
+      metadata, clientInformation, refreshToken: tokens.refresh_token!, resource, fetchFn,
+    });
+    assert.notEqual(renewed.refresh_token, tokens.refresh_token);
+    assert.equal((await f.request(f.local + "/mcp", { headers: { authorization: "Bearer " + renewed.access_token } })).status, 401);
+    assert.equal((await f.refresh(f.local, clientInformation.client_id, renewed.refresh_token!)).status, 400);
+    assert.equal((await f.exchange(f.local, clientInformation.client_id,
+      await f.authorize(f.vm, clientInformation.client_id))).status, 400);
+    assert.equal((await f.post(f.vm + "/revoke", { client_id: clientInformation.client_id, token: renewed.refresh_token! })).status, 200);
+    assert.equal((await f.request(resource, { headers: { authorization: "Bearer " + renewed.access_token } })).status, 401);
+  } finally { await f.close(); }
+});
+
+test("HTTPS VM endpoints reject plaintext and untrusted forwarded TLS", async () => {
+  for (const trusted of [true, false]) {
+    const f = await fixture(true, true, trusted ? "127.0.0.1" : "192.0.2.1");
+    try {
+      for (const origin of [f.local, f.vm]) {
+        for (const route of ["/mcp", "/.well-known/oauth-authorization-server", "/token", "/register", "/revoke"]) {
+          const method = ["/token", "/register", "/revoke"].includes(route) ? "POST" : "GET";
+          assert.equal((await f.request(origin + route, { method, headers: { "x-forwarded-proto": "http" } })).status, 400);
+          if (!trusted)
+            assert.equal((await f.request(origin + route, { method })).status, 400);
+        }
+      }
     } finally { await f.close(); }
   }
 });
