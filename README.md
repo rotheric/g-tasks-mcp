@@ -352,6 +352,18 @@ a relevance score, and index freshness/candidate-limit information. Scores are
 reciprocal-rank fusion values, not probabilities. Retrieval supplies context to the
 client; the server does not generate answers or hypothetical questions.
 
+Each search emits one JSON `task-search.completed` record to server stderr on
+success or failure. Records include a request ID, outcome, total duration and queue
+wait (`totalMs`, `queueMs`), plus accumulated milliseconds for reconciliation,
+query embedding, vector retrieval, lexical ranking, Google candidate verification,
+and candidate repair. Request/candidate/result counts and retrieval limit flags
+provide context. Reconciliation and repair timings include their own dependency
+work; query embedding and Google verification timings cover the search phase only.
+These phase timings do not include every operation and need not sum to total time.
+A null queue duration means the operation failed before entering the queued search
+callback. Logs omit queries, task/list/account identifiers, task content, credentials,
+and exception messages. Logging does not change search responses.
+
 The index embeds titles and notes directly, splitting long notes into bounded
 paragraph-aware chunks. Semantic chunk matches are grouped by task and combined
 with lexical matches over complete titles/notes. The server refetches a bounded

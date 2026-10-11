@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { performance } from "node:perf_hooks";
 import type { Configuration, SearchConfiguration } from "../config.js";
 import type { Storage } from "../storage.js";
 import { isGoogleAuthError, invalidateGoogleAuthorization } from "../google.js";
@@ -17,6 +18,7 @@ export interface SearchDependencies {
   embeddings?: EmbeddingPort;
   vectors?: VectorPort;
   now?: () => number;
+  logSearch?: (entry: Record<string, string | number | boolean | null>) => void;
 }
 export class SearchService {
   private tail: Promise<unknown> = Promise.resolve();
@@ -26,6 +28,7 @@ export class SearchService {
   private readonly embeddings: EmbeddingPort;
   private readonly vectors: VectorPort;
   private readonly now: () => number;
+  private readonly logSearch: NonNullable<SearchDependencies["logSearch"]>;
   private readonly settings: SearchConfiguration;
   private timer?: ReturnType<typeof setInterval>;
   private stopped = false;
@@ -38,6 +41,7 @@ export class SearchService {
     this.embeddings = ports.embeddings ?? ollama(c.search);
     this.vectors = ports.vectors ?? qdrant(c.search);
     this.now = ports.now ?? Date.now;
+    this.logSearch = ports.logSearch ?? ((entry) => console.error(JSON.stringify(entry)));
   }
   private identity(): Identity {
     const s = this.store.snapshot();
@@ -246,8 +250,30 @@ export class SearchService {
     });
   }
   search(input: SearchInput): Promise<unknown> {
+    const started = performance.now();
     const identity = this.identity();
+    const metrics: Record<string, string | number | boolean | null> = {
+      event: "task-search.completed", requestId: randomUUID(), outcome: "error",
+      queueMs: null, reconciliationMs: 0, queryEmbeddingMs: 0,
+      vectorRetrievalMs: 0, lexicalRankingMs: 0, googleVerificationMs: 0,
+      candidateRepairMs: 0, verificationRequests: 0, vectorRequests: 0,
+      reconciliations: 0, candidates: 0, verified: 0, repaired: 0, results: 0,
+    };
+    const timed = async <T>(field: string, operation: () => Promise<T>): Promise<T> => {
+      const before = performance.now();
+      try { return await operation(); }
+      finally { metrics[field] = Number(metrics[field]) + performance.now() - before; }
+    };
+    const reconcile = () => {
+      metrics.reconciliations = Number(metrics.reconciliations) + 1;
+      return timed("reconciliationMs", () => this.reconcile(identity));
+    };
+    const retrieve = (collection: string, vector: number[], count: number) => {
+      metrics.vectorRequests = Number(metrics.vectorRequests) + 1;
+      return timed("vectorRetrievalMs", () => this.external(identity, this.vectors.query(collection, vector, input, count)));
+    };
     return this.serial(identity, async () => {
+      metrics.queueMs = performance.now() - started;
       if (!input.query.trim() || input.query.length > 4000 ||
           !Number.isInteger(input.limit ?? 10) || (input.limit ?? 10) < 1 || (input.limit ?? 10) > 50 ||
           input.tasklistIds?.length === 0 ||
@@ -256,18 +282,19 @@ export class SearchService {
         throw new SearchError("Invalid task search query or filters.");
       const m = this.state(identity);
       if (!m.complete || m.dirty || !m.lastFullSync || this.now() - Date.parse(m.lastFullSync) >= DAY)
-        await this.reconcile(identity);
-      if (!await this.external(identity, this.vectors.exists(m.collection))) await this.reconcile(identity);
-      const [vector] = await this.external(identity, this.embeddings.embed([input.query], "query"));
+        await reconcile();
+      if (!await this.external(identity, this.vectors.exists(m.collection))) await reconcile();
+      const [vector] = await timed("queryEmbeddingMs", () => this.external(identity, this.embeddings.embed([input.query], "query")));
       if (vector.length !== m.dimension) throw new SearchError();
       const limit = input.limit ?? 10;
       let count = Math.max(50, limit * 8);
-      let hits = await this.external(identity, this.vectors.query(m.collection, vector, input, count));
+      let hits = await retrieve(m.collection, vector, count);
       const uniqueCount = () => new Set(hits.filter((h) => m.records[h.payload?.key] && eligible(m.records[h.payload.key], input)).map((h) => h.payload.key)).size;
       while (hits.length === count && uniqueCount() < limit * 3 && count < 1000) {
         count = Math.min(count * 2, 1000);
-        hits = await this.external(identity, this.vectors.query(m.collection, vector, input, count));
+        hits = await retrieve(m.collection, vector, count);
       }
+      const rankingStarted = performance.now();
       const dense = new Map<string, string>();
       for (const h of hits) {
         const record = m.records[h.payload?.key];
@@ -280,6 +307,8 @@ export class SearchService {
       for (const ranking of [[...dense.keys()], lexical.map((r) => r.key)])
         ranking.forEach((key, rank) => scores.set(key, (scores.get(key) ?? 0) + 1 / (60 + rank + 1)));
       const ranked = [...scores].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      metrics.lexicalRankingMs = performance.now() - rankingStarted;
+      metrics.candidates = ranked.length;
       const budget = Math.min(200, Math.max(30, limit * 4));
       const results: unknown[] = [];
       let verified = 0;
@@ -287,21 +316,27 @@ export class SearchService {
       const dirtyBefore = m.dirty;
       for (const [key, score] of ranked.slice(0, budget)) {
         const record = m.records[key];
-        const task = await this.external(identity, this.source.get(record.listId, record.task.id!));
+        metrics.verificationRequests = Number(metrics.verificationRequests) + 1;
+        const task = await timed("googleVerificationMs", () => this.external(identity, this.source.get(record.listId, record.task.id!)));
         verified++;
+        metrics.verified = verified;
         let candidateRepaired = false;
         if (!task || task.deleted || fingerprints(task, m.fingerprint).metadataHash !== record.metadataHash) {
-          m.dirty = true;
-          this.save(identity);
+          const repairStarted = performance.now();
           try {
-            if (task && !task.deleted) await this.put(identity, record.listId, task);
-            else await this.remove(identity, key);
-            await this.cleanup(identity);
-            m.dirty = dirtyBefore;
+            m.dirty = true;
             this.save(identity);
-            repaired++;
-            candidateRepaired = true;
-          } catch { m.dirty = true; throw new SearchError("Search candidate repair failed. Retry later."); }
+            try {
+              if (task && !task.deleted) await this.put(identity, record.listId, task);
+              else await this.remove(identity, key);
+              await this.cleanup(identity);
+              m.dirty = dirtyBefore;
+              this.save(identity);
+              repaired++;
+              metrics.repaired = repaired;
+              candidateRepaired = true;
+            } catch { m.dirty = true; throw new SearchError("Search candidate repair failed. Retry later."); }
+          } finally { metrics.candidateRepairMs = Number(metrics.candidateRepairMs) + performance.now() - repairStarted; }
         }
         if (task && eligible({ listId: record.listId, task }, input)) {
           const index = record.pointIds.indexOf(dense.get(key) ?? "");
@@ -312,12 +347,22 @@ export class SearchService {
         }
         if (results.length === limit) break;
       }
+      metrics.results = results.length;
+      metrics.candidateLimitReached = hits.length === count;
+      metrics.verificationLimitReached = verified === budget && ranked.length > budget;
       return { results, index: { lastFullSync: m.lastFullSync, complete: m.complete, pendingReconciliation: m.dirty },
         retrieval: { verified, repaired, candidateLimitReached: hits.length === count,
           verificationLimitReached: verified === budget && ranked.length > budget,
           scores: "reciprocal-rank fusion; relevance, not probability",
           rankingMayBeStale: repaired > 0 } };
-    }).catch((error) => this.failure(identity, error));
+    }).then((result) => {
+      metrics.outcome = "success";
+      return result;
+    }).catch((error) => this.failure(identity, error)).finally(() => {
+      metrics.totalMs = performance.now() - started;
+      // Logging must never change a search result or expose query/task/error contents.
+      try { this.logSearch(metrics); } catch { /* Diagnostics are best effort. */ }
+    });
   }
   start(): void {
     if (this.timer || this.stopped) return;

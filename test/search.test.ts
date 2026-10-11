@@ -69,9 +69,11 @@ function fixture() {
     async get(listId: string, id: string) { fetches++; await getHook?.(); return structuredClone(tasks.get(taskKey(listId, id))?.task ?? null); },
   };
   const embeddings = { async embed(texts: string[]) { embeds += texts.length; return texts.map(() => [1, 0]); } };
-  const service = () => new SearchService(store, c, { source, embeddings, vectors, now: () => time });
+  const logs: Record<string, string | number | boolean | null>[] = [];
+  const service = () => new SearchService(store, c, { source, embeddings, vectors, now: () => time,
+    logSearch: (entry) => { logs.push(entry); } });
   let search = service();
-  return { dir, store, c, vectors, tasks, add, connect, source, embeddings,
+  return { dir, store, c, vectors, tasks, add, connect, source, embeddings, logs,
     get search() { return search; }, restart() { search = service(); },
     get embeds() { return embeds; }, get fetches() { return fetches; }, get inventoryCalls() { return inventoryCalls; },
     set inventoryHook(h: (() => Promise<void>) | undefined) { inventoryHook = h; },
@@ -560,4 +562,55 @@ test("sync counts tasks rather than chunks, distinguishes reuse and metadata upd
     const rebuilt = await f.search.sync(true);
     assert.equal(rebuilt.indexedTasks, 1); assert.equal(rebuilt.embeddedTasks, 1); assert.equal(rebuilt.reusedTasks, 0);
   } finally { await f.close(); }
+});
+
+
+test("search timing logs cover queueing, cold/warm phases and failures without private evidence", async () => {
+  const f = fixture();
+  try {
+    f.add("private-task-id", { title: "PRIVATE TITLE", notes: "PRIVATE NOTES" });
+    await f.search.search({ query: "PRIVATE QUERY" });
+    const cold = f.logs[0];
+    assert.equal(cold.event, "task-search.completed");
+    assert.equal(cold.outcome, "success");
+    assert.equal(cold.reconciliations, 1);
+    assert.equal(cold.verificationRequests, 1);
+    assert.equal(cold.results, 1);
+    for (const field of ["totalMs", "queueMs", "reconciliationMs", "queryEmbeddingMs",
+      "vectorRetrievalMs", "lexicalRankingMs", "googleVerificationMs", "candidateRepairMs"]) {
+      assert.equal(typeof cold[field], "number");
+      assert.ok(Number(cold[field]) >= 0, field);
+      assert.ok(Number(cold[field]) <= Number(cold.totalMs), field);
+    }
+    const entered = deferred(), gate = deferred();
+    f.getHook = async () => { entered.resolve(); await gate.promise; };
+    const first = f.search.search({ query: "PRIVATE QUERY" });
+    await entered.promise;
+    const second = f.search.search({ query: "PRIVATE QUERY" });
+    gate.resolve();
+    await Promise.all([first, second]);
+    assert.equal(f.logs[2].reconciliations, 0);
+    assert.ok(Number(f.logs[2].queueMs) > 0);
+    assert.notEqual(f.logs[1].requestId, f.logs[2].requestId);
+    f.getHook = async () => { throw new Error("PRIVATE ERROR"); };
+    await assert.rejects(f.search.search({ query: "PRIVATE QUERY" }));
+    assert.equal(f.logs[3].outcome, "error");
+    assert.equal(f.logs[3].verificationRequests, 1);
+    assert.equal(f.logs[3].verified, 0);
+    assert.equal(f.logs.length, 4);
+    assert.doesNotMatch(JSON.stringify(f.logs), /PRIVATE|private-task-id/);
+  } finally { await f.close(); }
+});
+
+test("a failed timing logger does not change search success or failure", async () => {
+  const f = fixture();
+  const search = new SearchService(f.store, f.c, { source: f.source, embeddings: f.embeddings,
+    vectors: f.vectors, logSearch: () => { throw new Error("logging failed"); } });
+  try {
+    f.add("a");
+    const result: any = await search.search({ query: "a" });
+    assert.equal(result.results.length, 1);
+    f.vectors.fail = "query";
+    await assert.rejects(search.search({ query: "a" }), SearchError);
+  } finally { await search.stop(); await f.close(); }
 });
