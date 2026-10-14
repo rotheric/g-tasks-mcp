@@ -25,7 +25,7 @@ export async function command(args: string[]): Promise<void> {
   }
   if (name === "lock-recover") {
     storage.recoverLock();
-    console.log("Recovered absent writer lock.");
+    console.log("Writer lock is available; no lock files were removed.");
     return;
   }
   if (name === "migrate") storage.migrate(config.ownerSub || undefined);

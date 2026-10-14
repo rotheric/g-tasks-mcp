@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { once } from "node:events";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -57,7 +58,7 @@ test("private atomic state and exclusive writer survive restart; corrupt state f
     assert.equal(fs.statSync(f.s.file).mode & 0o777, 0o600);
     assert.equal(fs.statSync(f.dir).mode & 0o777, 0o700);
     assert.throws(() => new Storage(f.dir).acquire(), /locked/);
-    assert.throws(() => new Storage(f.dir).recoverLock(), /alive/);
+    assert.throws(() => new Storage(f.dir).recoverLock(), /locked/);
     f.s.release();
     f.s.acquire();
     assert.ok(f.s.accessToken(token.access_token, "https://mcp.example/mcp"));
@@ -448,3 +449,65 @@ for (const retirement of ["token", "client", "disconnect"])
       f.cleanup();
     }
   });
+
+test("SIGKILL releases the kernel lock without deleting files or losing committed state", async () => {
+  const { spawn } = await import("node:child_process");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gtasks-crash-"));
+  const child = spawn(process.execPath, ["--import", "tsx", "--input-type=module", "-e", `
+    import { Storage } from './src/storage.ts';
+    const s = new Storage(process.argv[1]);
+    s.acquire(); s.pinOwner('crash-owner');
+    console.log('ready');
+    setInterval(() => {}, 1000);
+  `, dir], { stdio: ["ignore", "pipe", "pipe"] });
+  const exited = once(child, "exit");
+  const s = new Storage(dir);
+  try {
+    await Promise.race([
+      once(child.stdout!, "data"),
+      exited.then(() => { throw new Error("Lock holder exited before readiness"); }),
+    ]);
+    assert.throws(() => s.acquire(), /locked/);
+    assert.throws(() => s.migrate(), /locked/);
+    const file = path.join(dir, ".writer-lock.os");
+    const inode = fs.statSync(file).ino;
+    child.kill("SIGKILL");
+    await exited;
+    // Reproduce an old-version crash without touching the legacy lock on restart.
+    const legacy = path.join(dir, ".writer-lock");
+    fs.mkdirSync(legacy);
+    const record = JSON.stringify({ pid: child.pid, token: "legacy" });
+    fs.writeFileSync(path.join(legacy, "owner.json"), record);
+    s.acquire();
+    assert.equal(s.snapshot().owner, "crash-owner");
+    assert.equal(fs.readFileSync(path.join(legacy, "owner.json"), "utf8"), record);
+    s.release();
+    s.recoverLock();
+    assert.equal(fs.statSync(file).ino, inode);
+  } finally {
+    child.kill("SIGKILL");
+    await exited;
+    s.release();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("live and corrupt legacy locks refuse startup and remain untouched", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gtasks-legacy-lock-"));
+  const legacy = path.join(dir, ".writer-lock");
+  fs.mkdirSync(legacy);
+  const file = path.join(legacy, "owner.json");
+  const s = new Storage(dir);
+  try {
+    const record = JSON.stringify({ pid: process.pid, token: "old" });
+    fs.writeFileSync(file, record);
+    assert.throws(() => s.acquire(), /live legacy/);
+    assert.equal(fs.readFileSync(file, "utf8"), record);
+    fs.writeFileSync(file, "corrupt");
+    assert.throws(() => s.acquire(), /corrupt/);
+    assert.equal(fs.readFileSync(file, "utf8"), "corrupt");
+  } finally {
+    s.release();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

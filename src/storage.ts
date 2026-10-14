@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { flockSync } from "fs-ext";
 import { z } from "zod";
 import type { OAuthClientInformationFull } from "@modelcontextprotocol/sdk/shared/auth.js";
 import type { Auth } from "googleapis";
@@ -108,7 +109,7 @@ export interface StorageOptions {
 export class Storage {
   readonly file: string;
   private state?: State;
-  private lockToken?: string;
+  private lockFd?: number;
   private now: () => number;
   constructor(
     readonly dataDir: string,
@@ -125,29 +126,52 @@ export class Storage {
       throw new Error("Storage must be owned by the current user");
     fs.chmodSync(file, directory ? 0o700 : 0o600);
   }
-  acquire(): void {
+  private acquireWriter(): void {
+    if (this.lockFd !== undefined) throw new Error("Storage already holds the writer lock");
     fs.mkdirSync(this.dataDir, { recursive: true, mode: 0o700 });
     this.safe(this.dataDir, true);
-    const lock = path.join(this.dataDir, ".writer-lock");
+    // Never unlink this file: all writers must lock the same inode.
+    const file = path.join(this.dataDir, ".writer-lock.os");
+    const fd = fs.openSync(file, fs.constants.O_CREAT | fs.constants.O_RDWR | fs.constants.O_NOFOLLOW, 0o600);
     try {
-      fs.mkdirSync(lock, { mode: 0o700 });
-    } catch {
-      throw new Error(
-        "DATA_DIR is locked. Stop the server; inspect and recover a stale lock explicitly.",
-      );
-    }
-    const token = randomToken();
-    try {
-      fs.writeFileSync(
-        path.join(lock, "owner.json"),
-        JSON.stringify({ pid: process.pid, token }),
-        { flag: "wx", mode: 0o600 },
-      );
-      this.lockToken = token;
+      const st = fs.fstatSync(fd);
+      if (!st.isFile() || st.uid !== process.getuid?.() || st.nlink !== 1)
+        throw new Error("Unsafe storage lock file");
+      fs.fchmodSync(fd, 0o600);
+      try {
+        flockSync(fd, "exnb");
+      } catch (err) {
+        const code = (err as NodeJS.ErrnoException).code;
+        if (code === "EAGAIN" || code === "EWOULDBLOCK")
+          throw new Error("DATA_DIR is locked by another writer. Stop that process before retrying.");
+        throw err;
+      }
+      // Upgrade compatibility: preserve old directory locks and refuse to run
+      // alongside an old binary. A dead legacy owner needs no lock deletion.
+      const legacy = path.join(this.dataDir, ".writer-lock");
+      if (fs.existsSync(legacy)) {
+        const directory = fs.lstatSync(legacy);
+        const record = fs.lstatSync(path.join(legacy, "owner.json"));
+        if (!directory.isDirectory() || directory.isSymbolicLink() ||
+            !record.isFile() || record.isSymbolicLink() ||
+            directory.uid !== process.getuid?.() || record.uid !== process.getuid?.())
+          throw new Error("Unsafe legacy storage lock");
+        const owner = this.readPersisted(path.join(legacy, "owner.json"), lockSchema);
+        try {
+          process.kill(owner.pid, 0);
+          throw new Error("DATA_DIR is locked by a live legacy writer; stop it before upgrading.");
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== "ESRCH") throw err;
+        }
+      }
+      this.lockFd = fd;
     } catch (err) {
-      fs.rmSync(lock, { recursive: true, force: true });
+      fs.closeSync(fd);
       throw err;
     }
+  }
+  acquire(): void {
+    this.acquireWriter();
     try {
       this.load();
     } catch (err) {
@@ -156,33 +180,15 @@ export class Storage {
     }
   }
   release(): void {
-    if (!this.lockToken) return;
-    const lock = path.join(this.dataDir, ".writer-lock");
-    const owner = this.readPersisted(path.join(lock, "owner.json"), lockSchema);
-    if (owner.token !== this.lockToken)
-      throw new Error("Storage lock ownership changed");
-    fs.rmSync(lock, { recursive: true });
-    this.lockToken = undefined;
+    if (this.lockFd === undefined) return;
+    fs.closeSync(this.lockFd);
+    this.lockFd = undefined;
     this.state = undefined;
   }
   recoverLock(): void {
-    const lock = path.join(this.dataDir, ".writer-lock");
-    this.safe(lock, true);
-    const file = path.join(lock, "owner.json");
-    this.safe(file);
-    const owner = this.readPersisted(file, lockSchema);
-    if (!Number.isInteger(owner.pid) || owner.pid < 1)
-      throw new Error("Invalid lock; manual recovery required");
-    try {
-      process.kill(owner.pid, 0);
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ESRCH") {
-        fs.rmSync(lock, { recursive: true });
-        return;
-      }
-      throw new Error("Cannot establish that lock owner is absent");
-    }
-    throw new Error("Lock owner is alive; refusing recovery");
+    // Retained as a compatibility diagnostic; kernel locks need no cleanup.
+    this.acquireWriter();
+    this.release();
   }
   private readPersisted<T>(file: string, schema: z.ZodType<T>): T {
     try {
@@ -210,7 +216,7 @@ export class Storage {
     }
   }
   snapshot(): State {
-    if (!this.state || !this.lockToken)
+    if (!this.state || this.lockFd === undefined)
       throw new Error("Storage writer lock is required");
     return structuredClone(this.state);
   }
@@ -280,19 +286,7 @@ export class Storage {
     }
     // A durable v2 migration marker is the state file itself. Never move originals
     // until the v2 commit; interrupted backup leaves old runtime stopped and closed.
-    const lock = path.join(this.dataDir, ".writer-lock");
-    try {
-      fs.mkdirSync(lock, { mode: 0o700 });
-    } catch {
-      throw new Error("Stop the service before migration");
-    }
-    const token = randomToken();
-    fs.writeFileSync(
-      path.join(lock, "owner.json"),
-      JSON.stringify({ pid: process.pid, token }),
-      { flag: "wx", mode: 0o600 },
-    );
-    this.lockToken = token;
+    this.acquireWriter();
     try {
       fs.mkdirSync(backup, { recursive: true, mode: 0o700 });
       this.safe(backup, true);

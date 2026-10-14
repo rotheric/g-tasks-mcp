@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, '..');
 function dependenciesWork() {
   // Use a fresh process so a failed native-module load is never cached.
   const probe = spawnSync(process.execPath, ['-e', `
+    require('fs-ext');
     require('typescript');
     require('tsx/package.json');
     require('esbuild').transformSync('const ready = true;', { loader: 'ts' });

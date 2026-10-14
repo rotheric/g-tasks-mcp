@@ -450,9 +450,18 @@ capacity. The online `/revoke` endpoint accepts the client's own access/refresh
 tokens. Merely removing a connector in a harness may not invoke it. Browser logout
 ends browser authentication, not existing MCP grants.
 
-After an unclean process exit, `node dist/index.js lock-recover` removes a lock
-only when its recorded process is absent. It refuses a live or ambiguous owner;
-do not delete a lock belonging to a running service. Unreadable/corrupt state
+Writer exclusion uses an OS-managed exclusive lock on the persistent
+`DATA_DIR/.writer-lock.os` file. The kernel releases it on exit, including crashes
+and SIGKILL, so a restart needs no stale-lock cleanup. Never delete or replace this
+file while any writer is running. DATA_DIR must use a local filesystem with flock
+support (macOS/Linux); the native `fs-ext` dependency requires a C/C++ build toolchain
+when installing dependencies. See [fs-ext documentation](https://github.com/baudehlo/node-fs-ext).
+Stop all old-version processes before upgrading and do not run old binaries after
+upgrading: they do not participate in the new locking protocol. Existing legacy
+`.writer-lock` directories are preserved; startup refuses a live, ambiguous or
+unreadable legacy owner and proceeds only when its recorded PID is absent.
+`node dist/index.js lock-recover` now checks writer availability without removing files.
+Unreadable/corrupt state
 requires operator recovery rather than automatic reset. Each normal replacement
 keeps the previous complete state in private `state-v2.backup.json`; startup never
 loads that backup automatically. Stop the service before recovery, inspect and
